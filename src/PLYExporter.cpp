@@ -16,10 +16,10 @@
  ************************************************************************/
 
 #include <PLYExporter.h>
-using r3dio::PLYExporter;
-using r3d::Mesh;
 #include <fstream>
 #include <cassert>
+using r3dio::PLYExporter;
+using r3d::Mesh;
 
 
 PLYExporter::PLYExporter() : r3dio::MeshExporter()
@@ -35,8 +35,8 @@ bool PLYExporter::doSave( const Mesh& m, const std::string& fname)
     std::ofstream ofs;
     try
     {
-        const int nv = m.numVtxs();
-        const int np = m.numFaces();
+        const size_t nv = m.numVtxs();
+        const size_t np = m.numFaces();
 
         ofs.open( fname.c_str(), std::ios::out);
         ofs << "ply" << std::endl;
