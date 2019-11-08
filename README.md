@@ -26,3 +26,5 @@ writing, only Adobe Reader supports the rendering of 3D models inside PDFs.
     Optionally required for conversion of IDTF format models to U3D models
     (usually prior to embedding in PDFs via creation of a suitable LaTeX
     file before processing by pdflatex and the media9 package).
+
+Download [libbuild](../../../libbuild) for easy build and install of this library.

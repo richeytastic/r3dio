@@ -225,15 +225,14 @@ endif()
 
 
 if(WITH_EIGEN) # Eigen3
-    if(WIN32)
-        set( EIGEN3_INCLUDE_DIR "${LIB_PRE_REQS}/eigen3/include/eigen3" CACHE PATH "Location of Eigen3 headers (Eigen/*.h) directory")
-    elseif(UNIX)
-        find_package( Eigen3 REQUIRED)
+    set( Eigen3_DIR "${LIB_PRE_REQS}/eigen3/share/eigen3/cmake" CACHE PATH "Location of Eigen3Config.cmake")
+    find_package( Eigen3 REQUIRED)
+    if( NOT EIGEN3_FOUND)
+        message( FATAL_ERROR "Can't find Eigen3!")
+    else()
+        include_directories( ${EIGEN3_INCLUDE_DIR})
+        message( STATUS "eigen3:     ${EIGEN3_INCLUDE_DIR}")
     endif()
-    if( NOT IS_DIRECTORY ${EIGEN3_INCLUDE_DIR})
-        message( FATAL_ERROR "Can't find Eigen3 headers!")
-    endif()
-    include_directories( ${EIGEN3_INCLUDE_DIR})
 endif()
 
 
