@@ -29,9 +29,9 @@
 
 *~
 
-cmake/
-test/
-testing/
+cmake
+test
+testing
 compile_commands.json
 CMakeLists.txt.user*
 .vscode
