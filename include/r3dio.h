@@ -21,6 +21,7 @@
 #include "r3dio/AssetImporter.h"
 #include "r3dio/IDTFExporter.h"
 #include "r3dio/IOFormats.h"
+#include "r3dio/IOHelpers.h"
 #include "r3dio/LaTeXU3DInserter.h"
 #include "r3dio/MeshExporter.h"
 #include "r3dio/MeshImporter.h"

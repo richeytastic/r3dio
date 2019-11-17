@@ -360,17 +360,17 @@ AssetImporter::AssetImporter( bool loadTextures, bool failOnNonTriangles)
     disallowed.insert("3d");
     disallowed.insert("assbin");
     disallowed.insert("assxml");    // Unavailable
-    disallowed.insert("dae");   // No exporter available
+    //disallowed.insert("dae");   // No exporter available
     disallowed.insert("pk3");   // Not available
     disallowed.insert("xml");   // Too generic
     disallowed.insert("cob");
     disallowed.insert("scn");
     disallowed.insert("mesh.xml");  // Too generic
-    disallowed.insert("stp");       // Doesn't work
+    //disallowed.insert("stp");       // Doesn't work
     disallowed.insert("glb");
     disallowed.insert("gltf");
     disallowed.insert("x");
-    disallowed.insert("3ds");   // No good for large files
+    //disallowed.insert("3ds");   // No good for large files
 
     Assimp::Importer* importer = new Assimp::Importer;
     const size_t n = importer->GetImporterCount();

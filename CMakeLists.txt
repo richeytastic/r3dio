@@ -19,9 +19,11 @@ include_directories( ${INCLUDE_F})
 
 set( INCLUDE_FILES
     "${INCLUDE_F}.h"
+    "${INCLUDE_F}/AssetExporter.h"
     "${INCLUDE_F}/AssetImporter.h"
     "${INCLUDE_F}/IDTFExporter.h"
     "${INCLUDE_F}/IOFormats.h"
+    "${INCLUDE_F}/IOHelpers.h"
     "${INCLUDE_F}/LaTeXU3DInserter.h"
     "${INCLUDE_F}/MeshExporter.h"
     "${INCLUDE_F}/MeshImporter.h"
@@ -33,9 +35,11 @@ set( INCLUDE_FILES
     )
 
 set( SRC_FILES
+    ${SRC_DIR}/AssetExporter
     ${SRC_DIR}/AssetImporter
     ${SRC_DIR}/IDTFExporter
     ${SRC_DIR}/IOFormats
+    ${SRC_DIR}/IOHelpers
     ${SRC_DIR}/LaTeXU3DInserter
     ${SRC_DIR}/MeshExporter
     ${SRC_DIR}/MeshImporter
