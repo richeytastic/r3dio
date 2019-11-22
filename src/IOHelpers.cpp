@@ -24,10 +24,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 
-r3d::Mesh::Ptr r3dio::loadMesh( const char *fname)
+r3d::Mesh::Ptr r3dio::loadMesh( const std::string &fname)
 {
     r3d::Mesh::Ptr model;
-    if ( fname)
+    if ( !fname.empty())
     {
         AssetImporter aimp(true, true);
         aimp.enableFormat("3ds");
@@ -44,7 +44,7 @@ r3d::Mesh::Ptr r3dio::loadMesh( const char *fname)
 }   // end loadMesh
 
 
-bool r3dio::saveMesh( const r3d::Mesh &mesh, const char *fn)
+bool r3dio::saveMesh( const r3d::Mesh &mesh, const std::string &fn)
 {
     if ( !boost::filesystem::path(fn).has_extension())  // Check for filename extension
         return false;
@@ -58,8 +58,6 @@ bool r3dio::saveMesh( const r3d::Mesh &mesh, const char *fn)
         return saveAsU3D( mesh, fn);
     else if ( ext == "stl")
         return saveAsSTL( mesh, fn);
-    else if ( ext == "dae")
-        return saveAsDAE( mesh, fn);
     else if ( ext == "3ds")
         return saveAs3DS( mesh, fn);
     else
@@ -73,31 +71,28 @@ bool r3dio::saveMesh( const r3d::Mesh &mesh, const char *fn)
 }   // end saveMesh
 
 
-bool r3dio::saveAsPLY( const r3d::Mesh &mesh, const char *fn)
+bool r3dio::saveAsPLY( const r3d::Mesh &mesh, const std::string &fn)
 {
     const std::string fname = boost::filesystem::path(fn).replace_extension("ply").string();
-    //std::cout << "Saving to " << fname << " ..." << std::endl;
     return PLYExporter().save( mesh, fname);
 }   // end saveAsPLY
 
 
-bool r3dio::saveAsOBJ( const r3d::Mesh &mesh, const char *fn)
+bool r3dio::saveAsOBJ( const r3d::Mesh &mesh, const std::string &fn)
 {
     const std::string fname = boost::filesystem::path(fn).replace_extension("obj").string();
-    //std::cout << "Saving to " << fname << " ..." << std::endl;
     return OBJExporter().save( mesh, fname);
 }   // end saveAsOBJ
 
 
-bool r3dio::saveAsU3D( const r3d::Mesh &mesh, const char *fn)
+bool r3dio::saveAsU3D( const r3d::Mesh &mesh, const std::string &fn)
 {
     const std::string fname = boost::filesystem::path(fn).replace_extension("u3d").string();
-    //std::cout << "Saving to " << fname << " ..." << std::endl;
     return U3DExporter().save( mesh, fname);
 }   // end saveAsU3D
 
 
-bool r3dio::saveAsSTL( const r3d::Mesh &mesh, const char *fn)
+bool r3dio::saveAsSTL( const r3d::Mesh &mesh, const std::string &fn)
 {
     const std::string fname = boost::filesystem::path(fn).replace_extension("stl").string();
     AssetExporter aexp;
@@ -106,17 +101,13 @@ bool r3dio::saveAsSTL( const r3d::Mesh &mesh, const char *fn)
 }   // end saveAsSTL
 
 
-bool r3dio::saveAsDAE( const r3d::Mesh &mesh, const char *fn)
+bool r3dio::saveAs3DS( const r3d::Mesh &mesh, const std::string &fn)
 {
-    const std::string fname = boost::filesystem::path(fn).replace_extension("dae").string();
-    AssetExporter aexp;
-    aexp.enableFormat("dae");
-    return aexp.save( mesh, fname);
-}   // end saveAsDAE
-
-
-bool r3dio::saveAs3DS( const r3d::Mesh &mesh, const char *fn)
-{
+    if ( mesh.numFaces() > 65536)
+    {
+        std::cerr << "[WARNING] r3dio::saveAs3DS: Mesh contains more than 65536 faces (limit for 3DS format)." << std::endl;
+        return false;
+    }   // end if
     const std::string fname = boost::filesystem::path(fn).replace_extension("3ds").string();
     AssetExporter aexp;
     aexp.enableFormat("3ds");

@@ -245,7 +245,7 @@ AssetExporter::AssetExporter() : r3dio::MeshExporter()
     disallowed.insert("3d");
     disallowed.insert("assbin");  // Leave as import only
     disallowed.insert("assxml");
-    //disallowed.insert("dae"); // Not allowed - no exporter available
+    disallowed.insert("dae"); // Not allowed - no exporter available
     disallowed.insert("pk3"); // Not available
     disallowed.insert("xml"); // Too generic
     disallowed.insert("cob");
@@ -255,7 +255,6 @@ AssetExporter::AssetExporter() : r3dio::MeshExporter()
     disallowed.insert("glb");   // Doesn't work correctly!
     disallowed.insert("gltf");  // Doesn't work correctly!
     disallowed.insert("x");     // Doesn't work for large files
-    disallowed.insert("3ds");   // Doesn't work for large files
 
     std::unordered_set<std::string> descSet;  // Don't add same descriptions more than once.
     Assimp::Exporter exporter;
