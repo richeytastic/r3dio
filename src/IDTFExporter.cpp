@@ -599,7 +599,7 @@ bool IDTFExporter::doSave( const Mesh& inmodel, const std::string& filename)
     else
     {
         std::cerr << "[STATUS] r3dio::IDTFExporter::doSave: Multi-material model being copied to single material model for export" << std::endl;
-        nmodel = inmodel.deepCopy( true);
+        nmodel = inmodel.deepCopy();
         nmodel->mergeMaterials();
         model = nmodel.get();
     }   // end else
