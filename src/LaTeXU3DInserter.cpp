@@ -112,10 +112,10 @@ bool LaTeXU3DInserter::setModel( const Mesh& model, const std::string& sdir)
 // public
 std::ostream& r3dio::operator<<( std::ostream& os, const LaTeXU3DInserter& params)
 {
-    const Vec3f& coo = params._cam.focus;
-    Vec3f cpos = params._cam.pos;  // Will be changing cpos because of horrible media9/Adobe Reader camera orientation issue.
+    const Vec3f& coo = params._cam.focus();
+    Vec3f cpos = params._cam.pos();  // Will be changing cpos because of horrible media9/Adobe Reader camera orientation issue.
     const double roo = (cpos - coo).norm();
-    const double fov = params._cam.fov;
+    const double fov = params._cam.fov();
 
     // Set cpos to be roo distance along +Z from coo
     cpos = coo + Vec3f(0,0,(float)roo);

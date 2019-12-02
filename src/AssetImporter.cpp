@@ -123,7 +123,6 @@ int setObjectFaces( const aiMesh* mesh, std::vector<int>& fids, int& nonTriangle
     const int nfaces = (int)mesh->mNumFaces;
     fids.resize( nfaces);
 
-    int v0, v1, v2;
     int dupFaces = 0; // Count duplicate faces not added
     nonTriangles = 0; // Count number of faces that aren't triangles
     const aiFace* aifaces = mesh->mFaces;
@@ -141,7 +140,6 @@ int setObjectFaces( const aiMesh* mesh, std::vector<int>& fids, int& nonTriangle
         const aiVector3D& av1 = mesh->mVertices[aiface.mIndices[1]];
         const aiVector3D& av2 = mesh->mVertices[aiface.mIndices[2]];
 
-#ifndef NDEBUG
         // All three vertices must be unique to make a triangle, or it's not necessary (and is counted as a duplicate).
         // This shouldn't ever happen if AssImp is doing its job properly.
         if ( av0 == av1 || av1 == av2 || av2 == av0)
@@ -152,53 +150,22 @@ int setObjectFaces( const aiMesh* mesh, std::vector<int>& fids, int& nonTriangle
             continue;
         }   // end if
 
-        v0 = model->addVertex( av0[0], av0[1], av0[2]);  // < 0 returned if can't be added (error)
-        if ( v0 < 0)
-        {
-            std::cerr << "[ERROR] r3dio::AssetImporter::setObjectFaces(): Unable to add 1st vertex " << Vec3f( av0[0], av0[1], av0[2]) << std::endl;
-            fids[i] = -1;
-            continue;
-        }   // end if
+        const Vec3f V0( av0[0], av0[1], av0[2]);
+        const Vec3f V1( av1[0], av1[1], av1[2]);
+        const Vec3f V2( av2[0], av2[1], av2[2]);
+        const int fid = model->addFace( V0, V1, V2);
 
-        v1 = model->addVertex( av1[0], av1[1], av1[2]);  // < 0 returned if can't be added (error)
-        if ( v1 < 0)
-        {
-            std::cerr << "[ERROR] r3dio::AssetImporter::setObjectFaces(): Unable to add 2nd vertex " << Vec3f( av1[0], av1[1], av1[2]) << std::endl;
-            fids[i] = -1;
-            continue;
-        }   // end if
-
-        v2 = model->addVertex( av2[0], av2[1], av2[2]);  // < 0 returned if can't be added (error)
-        if ( v2 < 0)
-        {
-            std::cerr << "[ERROR] r3dio::AssetImporter::setObjectFaces(): Unable to add 3rd vertex " << Vec3f( av2[0], av2[1], av2[2]) << std::endl;
-            fids[i] = -1;
-            continue;
-        }   // end if
-
-        // Again, since the float values are copied straight over, it should never be the case that the IDs map to the same value.
-        if ((v0 == v1) || (v0 == v2) || (v1 == v2))
-        {
-            std::cerr << "[ERROR] r3dio::AssetImporter::setObjectFaces(): Triple of vertex IDs are not all different!" << std::endl;
-            fids[i] = -1;
-            continue;
-        }   // end if
-#else
-        v0 = model->addVertex( av0[0], av0[1], av0[2]);
-        v1 = model->addVertex( av1[0], av1[1], av1[2]);
-        v2 = model->addVertex( av2[0], av2[1], av2[2]);
-#endif
-
-        const int fid = model->addFace( v0, v1, v2);
-        if ( faceSet.count(fid))
+        if ( (faceSet.count(fid) > 0) || fid < 0)
         {
             fids[i] = -1;
-            dupFaces++;
-            continue;
+            if ( faceSet.count(fid))
+                dupFaces++;
         }   // end if
-
-        fids[i] = fid;
-        faceSet.insert(fid);
+        else
+        {
+            fids[i] = fid;
+            faceSet.insert(fid);
+        }   // end else
     }   // end for
 
     return dupFaces;
