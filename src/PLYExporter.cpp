@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2019 Richard Palmer
+ * Copyright (C) 2020 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,19 +50,26 @@ bool PLYExporter::doSave( const Mesh& m, const std::string& fname)
         ofs << "property list uchar int vertex_index" << std::endl;
         ofs << "end_header" << std::endl;
 
-        const IntSet& vids = m.vtxIds();
+        const IntSet& vidSet = m.vtxIds();
+        std::vector<int> vids( vidSet.begin(), vidSet.end());
+        std::sort( vids.begin(), vids.end());   // Sort into ascending order for write consistency
         std::unordered_map<int,int> vvmap;
-        int i = 0;
-        for ( int vid : vids)
+        const size_t N = vids.size();
+        for ( size_t i = 0; i < N; ++i)
         {
-            vvmap[vid] = i++;   // Post-increment for PLY
-            ofs << m.vtx(vid)[0] << " " << m.vtx(vid)[1] << " " << m.vtx(vid)[2] << std::endl;
+            const int vid = vids[i];
+            const r3d::Vec3f &v = m.vtx(vid);
+            ofs << v[0] << " " << v[1] << " " << v[2] << std::endl;
+            vvmap[vid] = i;
         }   // end for
 
-        const IntSet& fids = m.faces();
-        for ( int fid : fids)
+        const IntSet& fidSet = m.faces();
+        std::vector<int> fids( fidSet.begin(), fidSet.end());
+        std::sort( fids.begin(), fids.end());   // Sort into ascending order for write consistency
+        const size_t M = fids.size();
+        for ( size_t i = 0; i < M; ++i)
         {
-            const int* f = m.fvidxs(fid);
+            const int *f = m.fvidxs(fids[i]);
             ofs << "3 " << vvmap.at(f[0]) << " " << vvmap.at(f[1]) << " " << vvmap.at(f[2]) << std::endl;
         }   // end for
 

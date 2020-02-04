@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2019 Richard Palmer
+ * Copyright (C) 2020 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ std::string getMaterialName( const std::string& fname, int midx)
 
 
 // Write out the .mtl file - returning any error string.
-std::string writeMaterialFile( const Mesh* model, const std::string& fname)
+std::string writeMaterialFile( const Mesh &mesh, const std::string& fname)
 {
     const boost::filesystem::path ppath = boost::filesystem::path(fname).parent_path();
     std::string err;
@@ -52,16 +52,16 @@ std::string writeMaterialFile( const Mesh* model, const std::string& fname)
         ofs << "# Wavefront OBJ material file produced by r3dio (https://github.com/richeytastic/r3dio)" << std::endl;
         ofs << std::endl;
 
-        int pmid = 0;   // Will be set to the 'pseudo' material ID in the event nfaces < total model faces.
+        int pmid = 0;   // Will be set to the 'pseudo' material ID in the event nfaces < total mesh faces.
         int nfaces = 0;
-        const IntSet& mids = model->materialIds();
+        const IntSet& mids = mesh.materialIds();
         for ( int mid : mids)
         {
-            nfaces += int(model->materialFaceIds(mid).size());
+            nfaces += int(mesh.materialFaceIds(mid).size());
             const std::string matname = getMaterialName( fname, mid);
             ofs << "newmtl " << matname << std::endl;
             ofs << "illum 1" << std::endl;
-            const cv::Mat tx = model->texture(mid);
+            const cv::Mat tx = mesh.texture(mid);
             if ( !tx.empty())
             {
                 std::ostringstream oss;
@@ -76,8 +76,8 @@ std::string writeMaterialFile( const Mesh* model, const std::string& fname)
         }   // end for
 
         // Do we need an extra 'pseudo' material?
-        assert( nfaces <= int(model->numFaces()));
-        if ( nfaces < int(model->numFaces()))
+        assert( nfaces <= int(mesh.numFaces()));
+        if ( nfaces < int(mesh.numFaces()))
         {
             ofs << "newmtl " << getMaterialName( fname, pmid) << std::endl;
             ofs << "illum 1" << std::endl;
@@ -96,42 +96,53 @@ std::string writeMaterialFile( const Mesh* model, const std::string& fname)
 
 using IIMap = std::unordered_map<int,int>;
 
-void writeVertices( std::ostream& os, const Mesh* model, IIMap& vvmap)
+void writeVertices( std::ostream& os, const Mesh &mesh, IIMap& vvmap)
 {
+    const IntSet& vidSet = mesh.vtxIds();
+    // Ensure always sorted into ascending order for write consistency
+    std::vector<int> vids( vidSet.begin(), vidSet.end());
+    std::sort( vids.begin(), vids.end());
+
     int i = 0;
-    const IntSet& vids = model->vtxIds();
     for ( int vid : vids)
     {
         vvmap[vid] = ++i;   // Preincrement because vertex indices start at one for OBJ
-        const Vec3f& v = model->vtx(vid);
+        const Vec3f& v = mesh.vtx(vid);
         os << "v\t" << v[0] << " " << v[1] << " " << v[2] << std::endl;
     }   // end for
 }   // end writeVertices
 
 
-void writeMaterialUVs( std::ostream& os, const Mesh* model, int midx, IIMap& uvmap)
+void writeMaterialUVs( std::ostream& os, const Mesh &mesh, int midx, IIMap& uvmap)
 {
+    const IntSet& uvidSet = mesh.uvs( midx);
+    // Ensure always sorted into ascending order for write consistency
+    std::vector<int> uvids( uvidSet.begin(), uvidSet.end());
+    std::sort( uvids.begin(), uvids.end());
+
     int i = 0;
-    const IntSet& uvids = model->uvs( midx);
     for ( int uvid : uvids)
     {
         uvmap[uvid] = ++i;  // Pre-increment (.obj lists start at 1)
-        const Vec2f& uv = model->uv(midx, uvid);
+        const Vec2f& uv = mesh.uv(midx, uvid);
         os << "vt\t" << uv[0] << " " << uv[1] << " " << 0.0 << std::endl;
     }   // end for
     os << std::endl;
 }   // end writeMaterialUVs
 
 
-void writeMaterialFaces( std::ostream& os, const Mesh* model, int midx, const IIMap& vvmap, const IIMap& uvmap, IntSet& rfids)
+void writeMaterialFaces( std::ostream& os, const Mesh &mesh, int midx, const IIMap& vvmap, const IIMap& uvmap, IntSet& rfids)
 {
     // Vertex indices are +1 because .obj vertex list starts at 1.
-    const IntSet& mfids = model->materialFaceIds( midx);
+    const IntSet& mfidSet = mesh.materialFaceIds( midx);
+    std::vector<int> mfids( mfidSet.begin(), mfidSet.end());
+    std::sort( mfids.begin(), mfids.end());
+
     for ( int fid : mfids)
     {
         rfids.erase(fid);
-        const int* vidxs = model->fvidxs(fid);
-        const int* fuvs = model->faceUVs(fid);
+        const int* vidxs = mesh.fvidxs(fid);
+        const int* fuvs = mesh.faceUVs(fid);
         os << "f\t" << vvmap.at(vidxs[0]) << "/" << uvmap.at(fuvs[0]) << " "
                     << vvmap.at(vidxs[1]) << "/" << uvmap.at(fuvs[1]) << " "
                     << vvmap.at(vidxs[2]) << "/" << uvmap.at(fuvs[2]) << std::endl;
@@ -142,16 +153,16 @@ void writeMaterialFaces( std::ostream& os, const Mesh* model, int midx, const II
 
 
 // protected
-bool OBJExporter::doSave( const Mesh& model, const std::string& fname)
+bool OBJExporter::doSave( const Mesh& mesh, const std::string& fname)
 {
     std::string err = "";
 
     // Only need to write out the material file if have materials
     std::string matfile = "";
-    if ( model.numMats() > 0)
+    if ( mesh.numMats() > 0)
     {
         matfile = boost::filesystem::path(fname).replace_extension("mtl").string();
-        err = writeMaterialFile( &model, matfile);
+        err = writeMaterialFile( mesh, matfile);
         if ( !err.empty())
         {
             setErr( "Unable to write OBJ .mtl file! " + err);
@@ -172,30 +183,30 @@ bool OBJExporter::doSave( const Mesh& model, const std::string& fname)
             ofs << std::endl;
         }   // end if
 
-        ofs << "# Model has " << model.numVtxs() << " vertices" << std::endl;
+        ofs << "# Mesh has " << mesh.numVtxs() << " vertices" << std::endl;
 
         IIMap vvmap;
-        writeVertices( ofs, &model, vvmap);
+        writeVertices( ofs, mesh, vvmap);
 
         ofs << std::endl;
 
         IntSet remfids; // Will hold face IDs not associated with a material
-        const IntSet& fids = model.faces();
+        const IntSet& fids = mesh.faces();
         for ( int fid : fids)
             remfids.insert(fid);
 
         int pmid = 0;   // Pseudo material ID if required.
-        const IntSet& mids = model.materialIds();
+        const IntSet& mids = mesh.materialIds();
         for ( int mid : mids)
         {
             const std::string mname = getMaterialName( fname, mid);
-            ofs << "# " << model.uvs(mid).size() << " UV coordinates on material '" << mname << "'" << std::endl;
+            ofs << "# " << mesh.uvs(mid).size() << " UV coordinates on material '" << mname << "'" << std::endl;
             IIMap uvmap;
-            writeMaterialUVs( ofs, &model, mid, uvmap);
+            writeMaterialUVs( ofs, mesh, mid, uvmap);
             ofs << std::endl;
-            ofs << "# Mesh '" << mname << "' with " << model.materialFaceIds(mid).size() << " faces" << std::endl;
+            ofs << "# Mesh '" << mname << "' with " << mesh.materialFaceIds(mid).size() << " faces" << std::endl;
             ofs << "usemtl " << mname << std::endl;
-            writeMaterialFaces( ofs, &model, mid, vvmap, uvmap, remfids);
+            writeMaterialFaces( ofs, mesh, mid, vvmap, uvmap, remfids);
             pmid = mid+1;
         }   // end for
 
@@ -206,9 +217,11 @@ bool OBJExporter::doSave( const Mesh& model, const std::string& fname)
             const std::string mname = getMaterialName( fname, pmid);
             ofs << "# Mesh '" << mname << "' with " << remfids.size() << " faces" << std::endl;
             ofs << "usemtl " << mname << std::endl;
-            for ( int fid : remfids)
+            std::vector<int> rfids( remfids.begin(), remfids.end());
+            std::sort( rfids.begin(), rfids.end()); // Sort into ascending order for file output consistency
+            for ( int fid : rfids)
             {
-                const int* vidxs = model.fvidxs(fid);
+                const int* vidxs = mesh.fvidxs(fid);
                 ofs << "f\t" << vvmap.at(vidxs[0]) << " " << vvmap.at(vidxs[1]) << " " << vvmap.at(vidxs[2]) << std::endl;
             }   // end for
         }   // end if

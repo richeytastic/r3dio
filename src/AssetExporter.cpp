@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2019 Richard Palmer
+ * Copyright (C) 2020 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ std::string saveImage( aiMaterial* mat,
 */
 
 
-std::string saveMaterialTexture( aiMaterial* mat, const r3d::Mesh& mesh, int matId, const std::string& fname)
+std::string saveMaterialTexture( aiMaterial* mat, const r3d::Mesh& model, int matId, const std::string& fname)
 {
     const Path filepath(fname);
     const Path fstem = filepath.stem();
@@ -89,7 +89,7 @@ std::string saveMaterialTexture( aiMaterial* mat, const r3d::Mesh& mesh, int mat
     const aiString matName( oss.str());
     mat->AddProperty( &matName, AI_MATKEY_NAME);  // newmtl
 
-    const cv::Mat& txmap = mesh.texture(matId);
+    const cv::Mat& txmap = model.texture(matId);
 
     const Path imgroot = ppath / fstem;
     std::string err;
@@ -115,7 +115,10 @@ std::string saveMaterialTexture( aiMaterial* mat, const r3d::Mesh& mesh, int mat
 // Set the mesh points, texture coords, and face (polygon) info.
 void setMaterial( aiMesh* mesh, const r3d::Mesh& model, int matId, IntSet& remfids)
 {
-    const IntSet& fids = model.materialFaceIds( matId);
+    const IntSet& fidSet = model.materialFaceIds( matId);
+    // Face IDs are sorted into ascending order for consistency when writing
+    std::vector<int> fids( fidSet.begin(), fidSet.end());
+    std::sort( fids.begin(), fids.end());
 
     const size_t nFaces = fids.size();
     mesh->mNumFaces = nFaces;
@@ -126,19 +129,19 @@ void setMaterial( aiMesh* mesh, const r3d::Mesh& model, int matId, IntSet& remfi
     mesh->mNumUVComponents[0] = mesh->mNumVertices;
     mesh->mTextureCoords[0] = new aiVector3D[mesh->mNumUVComponents[0]];
 
-    unsigned int j = 0; // AssImp vertex ID
-    unsigned int i = 0; // AssImp face ID
-    for ( int fid : fids)
+    size_t j = 0; // AssImp vertex ID
+    for ( size_t i = 0; i < nFaces; ++i)
     {
+        const int fid = fids[i];
         remfids.erase(fid);
         const int* uvids = model.faceUVs(fid);
         const int* vtxs = model.fvidxs(fid);
 
-        aiFace& face = mesh->mFaces[i++];
+        aiFace& face = mesh->mFaces[i];
         face.mNumIndices = 3;
         face.mIndices = new unsigned int[face.mNumIndices];
 
-        for ( int k = 0; k < 3; ++k)    // 3 vertices of triangle
+        for ( size_t k = 0; k < face.mNumIndices; ++k)    // 3 vertices of triangle
         {
             const Vec3f& v = model.vtx(vtxs[k]);
             aiVector3D& vertex = mesh->mVertices[j];
@@ -154,13 +157,17 @@ void setMaterial( aiMesh* mesh, const r3d::Mesh& model, int matId, IntSet& remfi
 
             face.mIndices[k] = j++;
         }   // end for
-    }   // end foreach
+    }   // end for
 }   // end setMaterial
 
 
 void setNonMaterialMesh( aiMesh* mesh, const r3d::Mesh& model, const IntSet& remfids)
 {
     const size_t nFaces = remfids.size();
+    // Face IDs are sorted into ascending order for consistency when writing
+    std::vector<int> rfids( remfids.begin(), remfids.end());
+    std::sort( rfids.begin(), rfids.end());
+
     mesh->mNumFaces = nFaces;
     mesh->mFaces = new aiFace[mesh->mNumFaces];
     mesh->mNumVertices = 3 * nFaces;
@@ -169,20 +176,20 @@ void setNonMaterialMesh( aiMesh* mesh, const r3d::Mesh& model, const IntSet& rem
     mesh->mNumUVComponents[0] = 0;
     mesh->mTextureCoords[0] = new aiVector3D[mesh->mNumUVComponents[0]];
 
-    unsigned int j = 0; // AssImp vertex ID
-    unsigned int i = 0; // AssImp face ID
-    for ( int fid : remfids)
+    size_t j = 0; // AssImp vertex ID
+    for ( size_t i = 0; i < nFaces; ++i)
     {
+        const int fid = rfids[i];
         assert( model.faceMaterialId( fid) == -1);  // Should be true since face not associated with Material.
-        assert( model.faceUVs( fid) == nullptr);       // Should return NULL since not associated with a Material.
+        assert( model.faceUVs( fid) == nullptr);    // Should return null since not associated with a Material.
 
-        const int* vtxs = model.fvidxs(fid);
+        const int *vtxs = model.fvidxs(fid);
 
-        aiFace& face = mesh->mFaces[i++];
+        aiFace& face = mesh->mFaces[i];
         face.mNumIndices = 3;
         face.mIndices = new unsigned int[face.mNumIndices];
 
-        for ( int k = 0; k < 3; ++k)
+        for ( size_t k = 0; k < face.mNumIndices; ++k)
         {
             const Vec3f& v = model.vtx(vtxs[k]);
             aiVector3D& vertex = mesh->mVertices[j];
@@ -192,7 +199,7 @@ void setNonMaterialMesh( aiMesh* mesh, const r3d::Mesh& model, const IntSet& rem
 
             face.mIndices[k] = j++;
         }   // end for
-    }   // end foreach
+    }   // end for
 }   // end setNonMaterialMesh
 
 
@@ -238,7 +245,6 @@ aiScene* createSceneFromMeshes( std::vector<AiMesh>& meshes)
 }   // end namespace
 
 
-// public
 AssetExporter::AssetExporter() : r3dio::MeshExporter()
 {
     std::unordered_set<std::string> disallowed;
@@ -274,7 +280,6 @@ AssetExporter::AssetExporter() : r3dio::MeshExporter()
 }   // end ctor
 
 
-// public
 bool AssetExporter::enableFormat( const std::string& ext)
 {
     if ( _available.count(ext) == 0)
@@ -308,7 +313,7 @@ bool AssetExporter::doSave( const r3d::Mesh& mesh, const std::string& fname)
             return false;
         }   // end if
         //std::cout << "Saved textures for material " << matId << std::endl;
-    }   // end foreach
+    }   // end for
 
     // Polygons not attached to a material need to be included in the scene as a mesh without texture coordinates.
     if ( !remfids.empty())

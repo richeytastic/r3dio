@@ -48,8 +48,13 @@ bool r3dio::saveMesh( const r3d::Mesh &mesh, const std::string &fn)
 {
     if ( !boost::filesystem::path(fn).has_extension())  // Check for filename extension
         return false;
+
     const boost::filesystem::path fpath( fn);
-    const std::string ext = boost::algorithm::to_lower_copy( fpath.extension().string());
+    std::string ext = boost::algorithm::to_lower_copy( fpath.extension().string());
+    if ( ext == ".")    // Empty extension
+        return false;
+
+    ext = ext.substr(1);    // Remove the initial dot
     if ( ext == "ply")
         return saveAsPLY( mesh, fn);
     else if ( ext == "obj")
