@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2019 Richard Palmer
+ * Copyright (C) 2020 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 using r3dio::IDTFExporter;
 using r3dio::U3DExporter;
 using r3d::Mesh;
+namespace bp = boost::process;
 
 
 std::string U3DExporter::IDTFConverter( "IDTFConverter"); // public static
@@ -40,7 +41,7 @@ bool U3DExporter::isAvailable()
 {
     if ( boost::filesystem::exists( IDTFConverter))
         return true;
-    const boost::filesystem::path exepath = boost::process::search_path( IDTFConverter);
+    const boost::filesystem::path exepath = bp::search_path( IDTFConverter);
     return !exepath.empty();
 }   // end isAvailable
 
@@ -76,16 +77,18 @@ bool convertIDTF2U3D( const std::string& idtffile, const std::string& u3dfile)
             << " -eo 65535" // Export everything
             << " -input " << idtffile
             << " -output " << u3dfile;
+
+        bp::ipstream out;
         const std::string pexe = cmd.str();
-        std::cerr << pexe << std::endl;
+        //std::cerr << pexe << std::endl;
 #ifdef _WIN32
-        boost::process::child c( pexe, boost::process::windows::hide);
+        bp::child c( pexe, bp::std_out > out, bp::windows::hide);
 #else
-        boost::process::child c( pexe);
-//      success = std::system( pexe.c_str()) == 0;
+        bp::child c( pexe, bp::std_out > out);
 #endif
         c.wait();
         success = c.exit_code() == 0;
+        //success = std::system( pexe.c_str()) == 0;
     }   // end try
     catch ( const std::exception& e)
     {
@@ -109,7 +112,7 @@ bool U3DExporter::doSave( const Mesh& model, const std::string& filename)
     // First save to intermediate IDTF format.
     IDTFExporter idtfExporter( _delOnDestroy, _media9);
     const std::string idtffile = boost::filesystem::path(filename).replace_extension("idtf").string();
-    std::cerr << istr << "Saving model to IDTF format" << std::endl;
+    //std::cerr << istr << "Saving model to IDTF format" << std::endl;
     if ( !idtfExporter.save( model, idtffile))
     {   
         setErr( idtfExporter.err());
@@ -121,10 +124,12 @@ bool U3DExporter::doSave( const Mesh& model, const std::string& filename)
         savedOkay = false;
     }   // end if
 
-    if ( savedOkay)
-        std::cerr << istr << "Successfully converted IDTF to U3D" << std::endl;
-    else
+    if ( !savedOkay)
         std::cerr << wstr << "Failed to convert from IDTF to U3D!" << std::endl;
+#ifndef NDEBUG
+    else
+        std::cerr << istr << "Successfully converted IDTF to U3D" << std::endl;
+#endif
 
     return savedOkay;
 }   // end doSave

@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2019 Richard Palmer
+ * Copyright (C) 2020 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ IDTFExporter::~IDTFExporter() { reset();}
 // private
 void IDTFExporter::reset()
 {
-    static const std::string istr = "[INFO] r3dio::IDTFExporter::reset: ";
+    //static const std::string istr = "[INFO] r3dio::IDTFExporter::reset: ";
     if ( _delOnDtor)
     {
         using namespace boost::filesystem;
@@ -54,7 +54,7 @@ void IDTFExporter::reset()
         if ( exists( ffile) && is_regular_file( ffile))
         {
             remove( ffile);
-            std::cerr << istr << "Removed " << ffile << std::endl;
+            //std::cerr << istr << "Removed " << ffile << std::endl;
         }   // end if
 
         for ( const std::string& tgafile : _tgafiles)
@@ -63,7 +63,7 @@ void IDTFExporter::reset()
             if ( exists( ifile) && is_regular_file(ifile))
             {
                 remove( ifile);
-                std::cerr << istr << "Removed " << ifile << std::endl;
+                //std::cerr << istr << "Removed " << ifile << std::endl;
             }   // end if
         }   // end foreach
     }   // end _delOnDtor
@@ -598,7 +598,7 @@ bool IDTFExporter::doSave( const Mesh& inmodel, const std::string& filename)
         model = &inmodel;
     else
     {
-        std::cerr << "[STATUS] r3dio::IDTFExporter::doSave: Multi-material model being copied to single material model for export" << std::endl;
+        std::cerr << "[INFO] r3dio::IDTFExporter::doSave: Multi-material model being copied to single material model for export" << std::endl;
         nmodel = inmodel.deepCopy();
         nmodel->mergeMaterials();
         model = nmodel.get();
