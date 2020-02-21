@@ -75,12 +75,12 @@ bool convertIDTF2U3D( const std::string& idtffile, const std::string& u3dfile)
             << " -tq 100"   // Texture quality MAX
             << " -en 1"     // Enable normals exclusion 
             << " -eo 65535" // Export everything
-            << " -input " << idtffile
-            << " -output " << u3dfile;
+            << " -input \"" << idtffile << "\""
+            << " -output \"" << u3dfile << "\"";
 
         bp::ipstream out;
         const std::string pexe = cmd.str();
-        //std::cerr << pexe << std::endl;
+        //std::cerr << "[INFO] r3dio::U3DExporter executing: " << pexe << std::endl;
 #ifdef _WIN32
         bp::child c( pexe, bp::std_out > out, bp::windows::hide);
 #else

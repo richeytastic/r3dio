@@ -33,6 +33,8 @@
 using r3dio::PDFGenerator;
 using r3dio::U3DExporter;
 using r3d::Mesh;
+namespace bp = boost::process;
+namespace bfs = boost::filesystem;
 
 std::string PDFGenerator::pdflatex( "pdflatex"); // public static
 
@@ -40,9 +42,9 @@ std::string PDFGenerator::pdflatex( "pdflatex"); // public static
 // public
 bool PDFGenerator::isAvailable()
 {
-    if ( boost::filesystem::exists( pdflatex))
+    if ( bfs::exists( pdflatex))
         return true;
-    const boost::filesystem::path genpath = boost::process::search_path(pdflatex);
+    const bfs::path genpath = bp::search_path(pdflatex);
     return !genpath.empty();
 }   // end isAvailable
 
@@ -58,14 +60,13 @@ PDFGenerator::PDFGenerator( bool remGen) : _remGen(remGen)
 // public
 bool PDFGenerator::operator()( const std::string& texfile, bool remtexfile)
 {
-    namespace bp = boost::process;
     if ( !isAvailable())
     {
         std::cerr << "[WARNING] r3dio::PDFGenerator: pdflatex not available! PDF generation disabled." << std::endl;
         return false;
     }   // end if
 
-    boost::filesystem::path tpath = texfile;
+    bfs::path tpath = texfile;
     bool success = false;
     std::ostringstream errMsg;
     std::cerr << "[INFO] r3dio::PDFGenerator: Attempting to generate PDF from " << texfile << std::endl;
@@ -82,28 +83,29 @@ bool PDFGenerator::operator()( const std::string& texfile, bool remtexfile)
         // up when running pdflatex on cmd line using its fully qualified path (with enclosing
         // quotes). Tried enclosing with escaped quotes in the pathname, but that didn't work
         // either. So doing it this way!
-        //boost::filesystem::path genpath = boost::process::search_path(pdflatex);
+        //bfs::path genpath = boost::process::search_path(pdflatex);
         //if ( genpath.empty())
-        //    genpath = boost::filesystem::path( pdflatex);
+        //    genpath = bfs::path( pdflatex);
         //bp::child c(genpath, "-interaction", "batchmode", texfile, bp::std_out > stdout, bp::std_err > stderr);
         //std::string cmd = pdflatex + " -interaction batchmode -quiet -output-directory " + tpath.parent_path().string() + " " + texfile;
-        std::string cmd = pdflatex + " --shell-escape -interaction batchmode -output-directory " + ppath + " " + texfile;
-        std::cerr << cmd << std::endl;
+        std::string cmd = "\"" + pdflatex + "\" --shell-escape -interaction batchmode -output-directory \"" + ppath + "\" \"" + texfile + "\"";
+        //std::cerr << "[INFO] r3dio::PDFGenerator executing: " << cmd << std::endl;
+        bp::ipstream out;
 #ifdef _WIN32
-        bp::child c( cmd, bp::windows::hide, bp::start_dir=ppath);
+        bp::child c( cmd, bp::std_out > out, bp::windows::hide, bp::start_dir=ppath);
 #else
-        bp::child c( cmd, bp::start_dir=ppath);
+        bp::child c( cmd, bp::std_out > out, bp::start_dir=ppath);
 #endif
         c.wait();
         success = c.exit_code() == 0;
         if ( success)
             std::cerr << "Generated " << tpath.replace_extension("pdf").string() << std::endl;
         else
-            errMsg << "[ERROR] r3dio::PDFGenerator::operator(): Child process exited with " << c.exit_code();
+            errMsg << "[ERROR] r3dio::PDFGenerator: Child process exited with " << c.exit_code();
     }   // end try
     catch ( const std::exception& e)
     {
-        errMsg << "[EXCEPTION!] r3dio::PDFGenerator::operator():" << e.what();
+        errMsg << "[EXCEPTION!] r3dio::PDFGenerator:" << e.what();
         success = false;
     }   // end ctch
 
@@ -120,15 +122,15 @@ bool PDFGenerator::operator()( const std::string& texfile, bool remtexfile)
 
     if ( remGen)
     {
-        boost::filesystem::remove( tpath.replace_extension("aux"));
-        boost::filesystem::remove( tpath.replace_extension("log"));
-        boost::filesystem::remove( tpath.replace_extension("out"));
+        bfs::remove( tpath.replace_extension("aux"));
+        bfs::remove( tpath.replace_extension("log"));
+        bfs::remove( tpath.replace_extension("out"));
     }   // end if
 
     // Remove the input .tex file?
     if ( success && remtexfile)
     {
-        boost::filesystem::remove(texfile);
+        bfs::remove(texfile);
         std::cerr << "Removed " << texfile << std::endl;
     }   // end if
 
