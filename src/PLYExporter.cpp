@@ -60,7 +60,7 @@ bool PLYExporter::doSave( const Mesh& m, const std::string& fname)
             const int vid = vids[i];
             const r3d::Vec3f &v = m.vtx(vid);
             ofs << v[0] << " " << v[1] << " " << v[2] << std::endl;
-            vvmap[vid] = i;
+            vvmap[vid] = int(i);
         }   // end for
 
         const IntSet& fidSet = m.faces();

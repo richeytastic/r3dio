@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2019 Richard Palmer
+ * Copyright (C) 2020 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,16 +42,12 @@ cv::Mat loadImage( const boost::filesystem::path& ppath, const std::string& imgf
     boost::filesystem::path imgPath = ppath / imgfile;
     cv::Mat m;
     if ( boost::filesystem::exists( imgPath))
-    {
         m = cv::imread( imgPath.string());
-        if ( m.empty())
-            std::cerr << "[ERROR] r3d::loadImage(" << imgPath.string() << "): FAILED!" << std::endl;
-    }   // end if
     return m;
 }   // loadImage
 
 
-int loadImages( const boost::filesystem::path& ppath, const std::vector<std::string>& imgfiles, std::vector<cv::Mat>& imgs)
+bool loadImages( const boost::filesystem::path& ppath, const std::vector<std::string>& imgfiles, std::vector<cv::Mat>& imgs)
 {
     imgs.clear();
     for ( const std::string& imgfile : imgfiles)
@@ -59,13 +55,15 @@ int loadImages( const boost::filesystem::path& ppath, const std::vector<std::str
         cv::Mat m = loadImage( ppath, imgfile);
         if ( m.empty())
         {
+            const boost::filesystem::path imgPath = ppath / imgfile;
+            std::cerr << "[ERROR] r3dio::loadImage( " << imgPath.string() << "): FAILED!" << std::endl;
             imgs.clear();
-            return -1;
+            break;
         }   // end if
         else
             imgs.push_back(m);
     }   // end for
-    return (int)imgs.size();
+    return !imgs.empty();
 }   // end loadImages
 
 
@@ -83,9 +81,9 @@ struct MaterialTextures
 
     // Load the ambient, diffuse, and specular texture maps returning
     // the number of each type loaded. Returns -1 on error loading.
-    int loadAmbient() { return loadImages( _ppath, _ambient, _amats);}
-    int loadDiffuse() { return loadImages( _ppath, _diffuse, _dmats);}
-    int loadSpecular() { return loadImages( _ppath, _specular, _smats);}
+    bool loadAmbient() { return loadImages( _ppath, _ambient, _amats);}
+    bool loadDiffuse() { return loadImages( _ppath, _diffuse, _dmats);}
+    bool loadSpecular() { return loadImages( _ppath, _specular, _smats);}
 
     const std::vector<cv::Mat>& ambient() const { return _amats;}
     const std::vector<cv::Mat>& diffuse() const { return _dmats;}
@@ -202,17 +200,26 @@ int addMaterial( const boost::filesystem::path& ppath, const aiScene *scene, int
     MaterialTextures mat( aimat, ppath);
     cv::Mat tx;
     if ( mat.loadDiffuse())
+    {
+        assert( !mat.diffuse().empty());
         tx = mat.diffuse()[0];
+    }   // end if
     else if ( mat.loadAmbient())
+    {
+        assert( !mat.ambient().empty());
         tx = mat.ambient()[0];
+    }   // end else if
     else if ( mat.loadSpecular())
+    {
+        assert( !mat.specular().empty());
         tx = mat.specular()[0];
+    }   // end else if
 
     if ( tx.empty())
     {
         std::cerr << "\tProblem loading image textures!" << std::endl;
         return -1;
-    }   // if
+    }   // end if
 
     return model->addMaterial( tx);
 }   // end addMaterial
