@@ -232,10 +232,11 @@ Mesh::Ptr createMesh( Assimp::Importer* importer, const boost::filesystem::path&
     const uint nmeshes = scene->mNumMeshes;
     std::cerr << "Imported " << nmeshes << " mesh and " << nmaterials << " material parts" << std::endl;
 
-    Mesh::Ptr model = r3d::Mesh::create();
+    Mesh::Ptr model = nullptr;
+    if ( nmeshes > 0)
+        model = r3d::Mesh::create();
 
     std::vector<int>* fidxs = new std::vector<int>;
-
     for ( uint i = 0; i < nmeshes; ++i)
     {
         fidxs->clear();
@@ -403,14 +404,20 @@ Mesh::Ptr AssetImporter::doLoad( const std::string& fname)
                              //| aiProcess_FindInstances
                              );
 
-    Mesh::Ptr mesh;
+    Mesh::Ptr mesh = nullptr;
     if ( !importer->GetScene())
+    {
+        std::cerr << "[WARNING] r3dio::AssetImporter::doLoad: Unable to read 3D scene!" << std::endl;
         setErr( "Unable to read 3D scene into importer from " + fname);
+    }   // end if
     else
     {
         mesh = createMesh( importer, boost::filesystem::path( fname).parent_path(), _loadTextures, _failOnNonTriangles);
         if (mesh == nullptr)
+        {
+            std::cerr << "[WARNING] r3dio::AssetImporter::doLoad: Unable to import mesh!" << std::endl;
             setErr( "Unable to translate imported mesh into standard format!");
+        }   // end if
         importer->FreeScene();
     }   // end else
 
