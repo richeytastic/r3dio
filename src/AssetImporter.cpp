@@ -230,7 +230,7 @@ Mesh::Ptr createMesh( Assimp::Importer* importer, const boost::filesystem::path&
     const aiScene* scene = importer->GetScene();
     const uint nmaterials = scene->mNumMaterials;
     const uint nmeshes = scene->mNumMeshes;
-    std::cerr << "Imported " << nmeshes << " mesh and " << nmaterials << " material parts" << std::endl;
+    //std::cerr << "Imported " << nmeshes << " mesh and " << nmaterials << " material parts" << std::endl;
 
     Mesh::Ptr model = nullptr;
     if ( nmeshes > 0)
@@ -242,7 +242,7 @@ Mesh::Ptr createMesh( Assimp::Importer* importer, const boost::filesystem::path&
         fidxs->clear();
         const aiMesh* mesh = scene->mMeshes[i];
 
-        std::cerr << "=====================[ MESH " << std::setw(2) << i << " ]=====================" << std::endl;
+        //std::cerr << "=====================[ MESH " << std::setw(2) << i << " ]=====================" << std::endl;
         if ( mesh->HasFaces() && mesh->HasPositions())
         {
             int nonTriangles = 0;
@@ -264,7 +264,7 @@ Mesh::Ptr createMesh( Assimp::Importer* importer, const boost::filesystem::path&
                 }   // end if
             }   // end if
 
-            std::cerr << dupTriangles << " / " << mesh->mNumFaces << " triangles are ignored duplicates." << std::endl;
+            //std::cerr << dupTriangles << " / " << mesh->mNumFaces << " triangles are ignored duplicates." << std::endl;
 
             if ( !loadTextures)
                 continue;
@@ -278,10 +278,12 @@ Mesh::Ptr createMesh( Assimp::Importer* importer, const boost::filesystem::path&
                 if ( matId >= 0)
                     setObjectTextureCoordinates( mesh, matId, *fidxs, model);
             }   // end if
+            /*
             else
                 std::cerr << "Mesh defines no texture coordinates." << std::endl;
+            */
         }   // end if
-        std::cerr << "===================================================" << std::endl;
+        //std::cerr << "===================================================" << std::endl;
     }   // end for
 
     delete fidxs;
