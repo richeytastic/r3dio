@@ -115,16 +115,16 @@ private:
 };  // end struct
 
 
-int setObjectFaces( const aiMesh* mesh, std::vector<int>& fids, int& nonTriangles, Mesh::Ptr model)
+size_t setObjectFaces( const aiMesh* mesh, std::vector<int>& fids, size_t& nonTriangles, Mesh::Ptr model)
 {
     IntSet faceSet;
-    const int nfaces = (int)mesh->mNumFaces;
+    const uint nfaces = mesh->mNumFaces;
     fids.resize( nfaces);
 
-    int dupFaces = 0; // Count duplicate faces not added
+    size_t dupFaces = 0; // Count duplicate faces not added
     nonTriangles = 0; // Count number of faces that aren't triangles
     const aiFace* aifaces = mesh->mFaces;
-    for ( int i = 0; i < nfaces; ++i)
+    for ( uint i = 0; i < nfaces; ++i)
     {
         const aiFace& aiface = aifaces[i];
         if ( aiface.mNumIndices != 3)   // Not a triangle?
@@ -245,8 +245,8 @@ Mesh::Ptr createMesh( Assimp::Importer* importer, const boost::filesystem::path&
         //std::cerr << "=====================[ MESH " << std::setw(2) << i << " ]=====================" << std::endl;
         if ( mesh->HasFaces() && mesh->HasPositions())
         {
-            int nonTriangles = 0;
-            const int dupTriangles = setObjectFaces( mesh, *fidxs, nonTriangles, model);
+            size_t nonTriangles = 0;
+            const size_t dupTriangles = setObjectFaces( mesh, *fidxs, nonTriangles, model);
             if ( nonTriangles > 0)
             {
                 if ( failOnNonTriangles)

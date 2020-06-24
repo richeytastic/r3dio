@@ -31,6 +31,7 @@ namespace {
 
 using Path = boost::filesystem::path;
 using byte = unsigned char;
+using uint = unsigned int;
 
 
 std::string getExtension( const std::string& fname)
@@ -121,15 +122,15 @@ void setMaterial( aiMesh* mesh, const r3d::Mesh& model, int matId, IntSet& remfi
     std::sort( fids.begin(), fids.end());
 
     const size_t nFaces = fids.size();
-    mesh->mNumFaces = nFaces;
+    mesh->mNumFaces = uint(nFaces);
     mesh->mFaces = new aiFace[mesh->mNumFaces];
-    mesh->mNumVertices = 3 * nFaces;
+    mesh->mNumVertices = 3 * mesh->mNumFaces;
     mesh->mVertices = new aiVector3D[mesh->mNumVertices];
 
     mesh->mNumUVComponents[0] = mesh->mNumVertices;
     mesh->mTextureCoords[0] = new aiVector3D[mesh->mNumUVComponents[0]];
 
-    size_t j = 0; // AssImp vertex ID
+    uint j = 0; // AssImp vertex ID
     for ( size_t i = 0; i < nFaces; ++i)
     {
         const int fid = fids[i];
@@ -168,15 +169,15 @@ void setNonMaterialMesh( aiMesh* mesh, const r3d::Mesh& model, const IntSet& rem
     std::vector<int> rfids( remfids.begin(), remfids.end());
     std::sort( rfids.begin(), rfids.end());
 
-    mesh->mNumFaces = nFaces;
+    mesh->mNumFaces = uint(nFaces);
     mesh->mFaces = new aiFace[mesh->mNumFaces];
-    mesh->mNumVertices = 3 * nFaces;
+    mesh->mNumVertices = 3 * mesh->mNumFaces;
     mesh->mVertices = new aiVector3D[mesh->mNumVertices];
 
     mesh->mNumUVComponents[0] = 0;
     mesh->mTextureCoords[0] = new aiVector3D[mesh->mNumUVComponents[0]];
 
-    size_t j = 0; // AssImp vertex ID
+    uint j = 0; // AssImp vertex ID
     for ( size_t i = 0; i < nFaces; ++i)
     {
         const int fid = rfids[i];

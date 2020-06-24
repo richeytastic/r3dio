@@ -31,20 +31,19 @@ using std::unordered_map;
 
 
 // public
-IDTFExporter::IDTFExporter( bool delOnDtor, bool m9)
-    : r3dio::MeshExporter(), _delOnDtor(delOnDtor), _media9(m9)
+IDTFExporter::IDTFExporter( bool delOnDtor, bool m9, float av)
+    : r3dio::MeshExporter(), _delOnDtor(delOnDtor), _media9(m9), _ambv(av)
 {
     addSupported( "idtf", "Intermediate Data Text Format");
 }   // end ctor
 
 
 // public
-IDTFExporter::~IDTFExporter() { reset();}
+IDTFExporter::~IDTFExporter() { _reset();}
 
 
 // Remove saved files.
-// private
-void IDTFExporter::reset()
+void IDTFExporter::_reset()
 {
     //static const std::string istr = "[INFO] r3dio::IDTFExporter::reset: ";
     if ( _delOnDtor)
@@ -70,7 +69,7 @@ void IDTFExporter::reset()
 
     _idtffile = "";
     _tgafiles.clear();
-}   // end reset
+}   // end _reset
 
 
 namespace {
@@ -163,7 +162,7 @@ void nodeLight( std::ostream& os, int lightID, const Vec3f& pos=Vec3f(0,0,0))
     os << ttt << "}" << n;  // end PARENT_TM
     os << tt << "}" << n;  // end PARENT 0
     os << t << "}" << n;  // end PARENT_LIST
-    os << t << "RESOURCE_NAME \"AmbientLight" << lightID << "\"" << n;
+    os << t << "RESOURCE_NAME \"Light" << lightID << "\"" << n;
     os << "}" << n << n; // end NODE "MODEL"
 }   // end nodeLight
 
@@ -175,7 +174,7 @@ void resourceLight( std::ostream& os, int lightID)
     os << "RESOURCE_LIST \"LIGHT\" {" << n;
     os << t << "RESOURCE_COUNT 1" << n;
     os << t << "RESOURCE 0 {" << n;
-    os << tt << "RESOURCE_NAME \"AmbientLight" << lightID << "\"" << n;
+    os << tt << "RESOURCE_NAME \"Light" << lightID << "\"" << n;
     os << tt << "LIGHT_TYPE \"AMBIENT\"" << n;
     os << tt << "LIGHT_COLOR 1.000000 1.000000 1.000000" << n;
     os << tt << "LIGHT_ATTENUATION 1.000000 0.000000 0.000000" << n;
@@ -232,7 +231,7 @@ void modifierShading( std::ostream& os, int meshID)
 }   // end modifierShading
 
 
-void resourceListMaterial( std::ostream& os)
+void resourceListMaterial( std::ostream& os, float ambv)
 {
     TB t(1), tt(2);
     NL n(1);
@@ -240,7 +239,7 @@ void resourceListMaterial( std::ostream& os)
     os << t << "RESOURCE_COUNT 1" << n;
     os << t << "RESOURCE 0 {" << n;
 	os << tt << "RESOURCE_NAME \"Material0\"" << n;
-	os << tt << "MATERIAL_AMBIENT 1.0 1.0 1.0" << n;
+	os << tt << "MATERIAL_AMBIENT " << ambv << " " << ambv << " " << ambv << n;
 	os << tt << "MATERIAL_DIFFUSE 1.0 1.0 1.0" << n;
 	os << tt << "MATERIAL_SPECULAR 0.0 0.0 0.0" << n;
     os << tt << "MATERIAL_EMISSIVE 0.0 0.0 0.0" << n;
@@ -268,7 +267,6 @@ void resourceListTexture( std::ostream& os, const std::vector<std::pair<int, std
     }   // end for
 	os << "}" << n << n; // end RESOURCE_LIST "TEXTURE"
 }   // end resourceListTexture
-
 
 
 struct ModelResource
@@ -510,9 +508,9 @@ private:
 };  // end struct
 
 
-
 // Write the model data in IDTF format. Only vertex, face, and texture mapping info are stored.
-std::string writeFile( const Mesh* model, bool media9, const std::string& filename, const std::vector<std::pair<int, std::string> >& mtf)
+std::string writeFile( const Mesh* model, bool media9, float ambv,
+                       const std::string& filename, const std::vector<std::pair<int, std::string> >& mtf)
 {
     const int nTX = (int)mtf.size();
     const int nmesh = std::max(1,nTX);
@@ -559,7 +557,7 @@ std::string writeFile( const Mesh* model, bool media9, const std::string& filena
         ofs << "}" << n << n;
 
         resourceListShader( ofs, nmesh, nTX > 0);
-        resourceListMaterial( ofs);
+        resourceListMaterial( ofs, ambv); // Flat-textured surfaces require less ambient light to show surface shadows
         resourceListTexture( ofs, mtf);
 
         // Shading modifiers
@@ -583,7 +581,7 @@ std::string writeFile( const Mesh* model, bool media9, const std::string& filena
 // protected
 bool IDTFExporter::doSave( const Mesh& inmodel, const std::string& filename)
 {
-    reset();
+    _reset();
     // Need to set all the texture map filenames (if present) and save out the textures.
     // Image files are saved adjacent to the model.
     using Path = boost::filesystem::path;
@@ -627,7 +625,7 @@ bool IDTFExporter::doSave( const Mesh& inmodel, const std::string& filename)
     }   // end foreach
 
     _idtffile = filename;
-    const std::string errMsg = writeFile( model, _media9, filename, mtf);
+    const std::string errMsg = writeFile( model, _media9, _ambv, filename, mtf);
     if ( !errMsg.empty())
         setErr( "Unable to write IDTF text file! : " + errMsg);
     return errMsg.empty();

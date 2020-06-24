@@ -47,8 +47,8 @@ bool U3DExporter::isAvailable()
 
 
 // public
-U3DExporter::U3DExporter( bool delOnDestroy, bool m9)
-    : r3dio::MeshExporter(), _delOnDestroy(delOnDestroy), _media9(m9)
+U3DExporter::U3DExporter( bool delOnDestroy, bool m9, float av)
+    : r3dio::MeshExporter(), _delOnDestroy(delOnDestroy), _media9(m9), _ambv(av)
 {
     if ( IDTFConverter.empty())
         IDTFConverter = "IDTFConverter";
@@ -110,7 +110,7 @@ bool U3DExporter::doSave( const Mesh& model, const std::string& filename)
     bool savedOkay = true;
 
     // First save to intermediate IDTF format.
-    IDTFExporter idtfExporter( _delOnDestroy, _media9);
+    IDTFExporter idtfExporter( _delOnDestroy, _media9, _ambv);
     const std::string idtffile = boost::filesystem::path(filename).replace_extension("idtf").string();
     //std::cerr << istr << "Saving model to IDTF format" << std::endl;
     if ( !idtfExporter.save( model, idtffile))

@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2019 Richard Palmer
+ * Copyright (C) 2020 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,9 @@ public:
     // any saved tga images (Mesh material textures) upon any new call to save,
     // or upon destruction of this object. See r3dio::U3DExporter.
     // Setting media9 true will transform coordinates as (a,b,c) --> (a,-c,b).
-    IDTFExporter( bool delFiles=false, bool media9=false);
+    // Set ambv to a number less than one for flat textured models otherwise
+    // the surface form will not be visible!
+    IDTFExporter( bool delFiles=false, bool media9=false, float ambv=1.0f);
     ~IDTFExporter() override;
 
 protected:
@@ -44,9 +46,10 @@ protected:
 private:
     const bool _delOnDtor;
     const bool _media9;
+    const float _ambv;
     std::string _idtffile;
     std::vector<std::string> _tgafiles;
-    void reset();
+    void _reset();
 };  // end class
 
 }   // end namespace

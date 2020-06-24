@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2019 Richard Palmer
+ * Copyright (C) 2020 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +48,9 @@ public:
     // Normally, both are destroyed immediately after saving the
     // U3D model. Set delOnDestroy to false to retain these files.
     // Setting media9 true will transform coordinates as (a,b,c) --> (a,-c,b).
-    U3DExporter( bool delOnDestroy=true, bool media9=false);
+    // Set ambv to a number less than one for flat textured models otherwise
+    // the surface form will not be visible!
+    U3DExporter( bool delOnDestroy=true, bool media9=false, float ambv=1.0f);
 
 protected:
     virtual bool doSave( const r3d::Mesh&, const std::string& filename);
@@ -56,6 +58,7 @@ protected:
 private:
     const bool _delOnDestroy;
     const bool _media9;
+    const float _ambv;
 };  // end class
 
 }   // end namespace

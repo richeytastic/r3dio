@@ -6,13 +6,7 @@ writing, only Adobe Reader supports the rendering of 3D models inside PDFs.
 ## Prerequisites
 - [r3d](../../../r3d)
 
-- [Boost](http://www.boost.org) 1.68+
-
-- [AssImp](https://github.com/assimp)
-    Requires version 4.1 *NB* When configuring using CMake on Windows:
-    - *UNCHECK* `AddGTest_FOUND`
-    - *UNCHECK* `ASSIMP_BUILD_TESTS`
-    - *UNCHECK* `ASSIMP_BUILD_ASSIMP_VIEW` (references deprecated DirectX SDK)
+- [AssImp](https://github.com/assimp) 5.0.1+
 
 - pdflatex
     Optionally required for PDF generation from LaTeX files - must be on the PATH.
