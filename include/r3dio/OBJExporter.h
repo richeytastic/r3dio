@@ -29,10 +29,16 @@ namespace r3dio {
 class r3dio_EXPORT OBJExporter : public MeshExporter
 {
 public:
-    OBJExporter();
+    /**
+     * If saveTextureAsPNG is false, textures are saved in JPEG format.
+     */
+    explicit OBJExporter( bool saveTextureAsPNG=false);
 
 protected:
     bool doSave( const r3d::Mesh&, const std::string& filename) override;
+
+private:
+    const bool _asPNG;
 };  // end class
 
 }   // end namespace

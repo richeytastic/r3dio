@@ -24,7 +24,7 @@ using r3d::Vec3f;
 using r3d::Vec2f;
 
 
-OBJExporter::OBJExporter() : r3dio::MeshExporter()
+OBJExporter::OBJExporter( bool asPNG) : _asPNG(asPNG)
 {
     addSupported( "obj", "Wavefront OBJ");
 }   // end ctor
@@ -41,7 +41,7 @@ std::string getMaterialName( const std::string& fname, int midx)
 
 
 // Write out the .mtl file - returning any error string.
-std::string writeMaterialFile( const Mesh &mesh, const std::string& fname)
+std::string writeMaterialFile( const Mesh &mesh, const std::string& fname, bool asPNG)
 {
     const boost::filesystem::path ppath = boost::filesystem::path(fname).parent_path();
     std::string err;
@@ -55,6 +55,8 @@ std::string writeMaterialFile( const Mesh &mesh, const std::string& fname)
         int pmid = 0;   // Will be set to the 'pseudo' material ID in the event nfaces < total mesh faces.
         int nfaces = 0;
         const IntSet& mids = mesh.materialIds();
+
+        const std::string IMG_EXT = asPNG ? ".png" : ".jpg";
         for ( int mid : mids)
         {
             nfaces += int(mesh.materialFaceIds(mid).size());
@@ -65,7 +67,7 @@ std::string writeMaterialFile( const Mesh &mesh, const std::string& fname)
             if ( !tx.empty())
             {
                 std::ostringstream oss;
-                oss << matname << ".png";
+                oss << matname << IMG_EXT;
                 ofs << "map_Kd " << oss.str() << std::endl;
                 const std::string imgfile = (ppath / oss.str()).string();
                 cv::imwrite( imgfile, tx);
@@ -162,7 +164,7 @@ bool OBJExporter::doSave( const Mesh& mesh, const std::string& fname)
     if ( mesh.numMats() > 0)
     {
         matfile = boost::filesystem::path(fname).replace_extension("mtl").string();
-        err = writeMaterialFile( mesh, matfile);
+        err = writeMaterialFile( mesh, matfile, _asPNG);
         if ( !err.empty())
         {
             setErr( "Unable to write OBJ .mtl file! " + err);

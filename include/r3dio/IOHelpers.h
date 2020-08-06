@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2019 Richard Palmer
+ * Copyright (C) 2020 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ r3dio_EXPORT bool saveMesh( const r3d::Mesh&, const std::string &filename);
 r3dio_EXPORT bool saveAsPLY( const r3d::Mesh&, const std::string &filename);
 
 // Save mesh in OBJ format; file extension set/replaced as "obj".
-r3dio_EXPORT bool saveAsOBJ( const r3d::Mesh&, const std::string &filename);
+r3dio_EXPORT bool saveAsOBJ( const r3d::Mesh&, const std::string &filename, bool asPNG=false);
 
 // Save mesh in STL format; file extension set/replaced as "stl".
 r3dio_EXPORT bool saveAsSTL( const r3d::Mesh&, const std::string &filename);

@@ -58,7 +58,7 @@ bool r3dio::saveMesh( const r3d::Mesh &mesh, const std::string &fn)
     if ( ext == "ply")
         return saveAsPLY( mesh, fn);
     else if ( ext == "obj")
-        return saveAsOBJ( mesh, fn);
+        return saveAsOBJ( mesh, fn, false);
     else if ( ext == "u3d")
         return saveAsU3D( mesh, fn);
     else if ( ext == "stl")
@@ -83,10 +83,10 @@ bool r3dio::saveAsPLY( const r3d::Mesh &mesh, const std::string &fn)
 }   // end saveAsPLY
 
 
-bool r3dio::saveAsOBJ( const r3d::Mesh &mesh, const std::string &fn)
+bool r3dio::saveAsOBJ( const r3d::Mesh &mesh, const std::string &fn, bool asPNG)
 {
     const std::string fname = boost::filesystem::path(fn).replace_extension("obj").string();
-    return OBJExporter().save( mesh, fname);
+    return OBJExporter( asPNG).save( mesh, fname);
 }   // end saveAsOBJ
 
 
