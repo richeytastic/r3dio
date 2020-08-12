@@ -69,7 +69,7 @@ bool PDFGenerator::operator()( const std::string& texfile, bool remtexfile)
     bfs::path tpath = texfile;
     bool success = false;
     std::ostringstream errMsg;
-    std::cerr << "[INFO] r3dio::PDFGenerator: Attempting to generate PDF from " << texfile << std::endl;
+    //std::cerr << "[INFO] r3dio::PDFGenerator: Attempting to generate PDF from " << texfile << std::endl;
 
     // Get the parent path of the texfile to run pdflatex in.
     const std::string ppath = tpath.parent_path().string();
@@ -99,7 +99,7 @@ bool PDFGenerator::operator()( const std::string& texfile, bool remtexfile)
         c.wait();
         success = c.exit_code() == 0;
         if ( success)
-            std::cerr << "Generated " << tpath.replace_extension("pdf").string() << std::endl;
+            ;//std::cerr << "Generated " << tpath.replace_extension("pdf").string() << std::endl;
         else
             errMsg << "[ERROR] r3dio::PDFGenerator: Child process exited with " << c.exit_code();
     }   // end try
@@ -131,7 +131,7 @@ bool PDFGenerator::operator()( const std::string& texfile, bool remtexfile)
     if ( success && remtexfile)
     {
         bfs::remove(texfile);
-        std::cerr << "Removed " << texfile << std::endl;
+        //std::cerr << "Removed " << texfile << std::endl;
     }   // end if
 
     return success;
