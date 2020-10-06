@@ -113,7 +113,7 @@ bool PDFGenerator::operator()( const std::string& texfile, bool remtexfile)
         std::cerr << errMsg.str() << std::endl;
 
     bool remGen = _remGen;
-    // Don't remove pdflatex generatedd files on failure if this is a debug build
+    // Don't remove pdflatex generated files on failure if this is a debug build
 #ifndef NDEBUG
     remtexfile = false; // Ensure the .tex file is never removed in debug mode
     if ( !success && _remGen)
