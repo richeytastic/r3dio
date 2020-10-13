@@ -62,7 +62,6 @@ std::string writeMaterialFile( const Mesh &mesh, const std::string& fname, bool 
             nfaces += int(mesh.materialFaceIds(mid).size());
             const std::string matname = getMaterialName( fname, mid);
             ofs << "newmtl " << matname << std::endl;
-            ofs << "illum 1" << std::endl;
             const cv::Mat tx = mesh.texture(mid);
             if ( !tx.empty())
             {
@@ -80,10 +79,7 @@ std::string writeMaterialFile( const Mesh &mesh, const std::string& fname, bool 
         // Do we need an extra 'pseudo' material?
         assert( nfaces <= int(mesh.numFaces()));
         if ( nfaces < int(mesh.numFaces()))
-        {
             ofs << "newmtl " << getMaterialName( fname, pmid) << std::endl;
-            ofs << "illum 1" << std::endl;
-        }   // end if
 
         ofs.close();
     }   // end try
@@ -216,8 +212,10 @@ bool OBJExporter::doSave( const Mesh& mesh, const std::string& fname)
         // Not all faces accounted for in materials, so write out the remainder without texture coordinates.
         if ( !remfids.empty())
         {
+            if ( pmid > 0)
+                pmid--;
             const std::string mname = getMaterialName( fname, pmid);
-            ofs << "# Mesh '" << mname << "' with " << remfids.size() << " faces" << std::endl;
+            ofs << "# Mesh '" << mname << "' with " << remfids.size() << " non-textured faces" << std::endl;
             ofs << "usemtl " << mname << std::endl;
             std::vector<int> rfids( remfids.begin(), remfids.end());
             std::sort( rfids.begin(), rfids.end()); // Sort into ascending order for file output consistency

@@ -163,7 +163,7 @@ void nodeLight( std::ostream& os, int lightID, const Vec3f& pos=Vec3f(0,0,0))
     os << tt << "}" << n;  // end PARENT 0
     os << t << "}" << n;  // end PARENT_LIST
     os << t << "RESOURCE_NAME \"Light" << lightID << "\"" << n;
-    os << "}" << n << n; // end NODE "MODEL"
+    os << "}" << n << n; // end NODE "LIGHT"
 }   // end nodeLight
 
 
