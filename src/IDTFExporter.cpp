@@ -64,7 +64,7 @@ void IDTFExporter::_reset()
                 remove( ifile);
                 //std::cerr << istr << "Removed " << ifile << std::endl;
             }   // end if
-        }   // end foreach
+        }   // end for
     }   // end _delOnDtor
 
     _idtffile = "";
@@ -441,9 +441,9 @@ private:
             const int uv1 = getUVListIndex( fid, 1);
             const int uv2 = getUVListIndex( fid, 2);
             os << tttt << "FACE " << i << " {" << n;
-            os << ttttt << "TEXTURE_LAYER 0 TEX_COORD: " << std::fixed << std::setprecision(6) << uv0 << " " << uv1 << " " << uv2 << n;
+            os << ttttt << "TEXTURE_LAYER 0 TEX_COORD: " << uv0 << " " << uv1 << " " << uv2 << n;
             os << tttt << "}" << n; // end FACE i
-        }   // end foreach
+        }   // end for
         os << ttt << "}" << n;  // end MESH_FACE_TEXTURE_COORD_LIST
     }   // end writeFaceTextureCoordList
 
@@ -622,7 +622,7 @@ bool IDTFExporter::doSave( const Mesh& inmodel, const std::string& filename)
         if ( !saveTGA( tx, tgafname))
             return false;
         mtf.push_back( std::pair<int, std::string>( mid, tgafname));
-    }   // end foreach
+    }   // end for
 
     _idtffile = filename;
     const std::string errMsg = writeFile( model, _media9, _ambv, filename, mtf);
