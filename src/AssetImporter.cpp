@@ -85,9 +85,20 @@ struct MaterialTextures
     bool loadDiffuse() { return loadImages( _ppath, _diffuse, _dmats);}
     bool loadSpecular() { return loadImages( _ppath, _specular, _smats);}
 
-    const std::vector<cv::Mat>& ambient() const { return _amats;}
-    const std::vector<cv::Mat>& diffuse() const { return _dmats;}
-    const std::vector<cv::Mat>& specular() const { return _smats;}
+    // Returns true iff there are textures to load.
+    bool hasTexture() const { return !_ambient.empty() || !_diffuse.empty() || !_specular.empty();}
+
+    cv::Mat load()
+    {
+        cv::Mat tx;
+        if ( loadDiffuse())
+            tx = _dmats[0];
+        else if ( loadAmbient())
+            tx = _amats[0];
+        else if ( loadSpecular())
+            tx = _smats[0];
+        return tx;
+    }   // end load
 
 private:
     void setTextureTypeFiles( const aiMaterial* mat, aiTextureType txtype, std::vector<std::string>& imgfiles)
@@ -191,40 +202,6 @@ void setObjectTextureCoordinates( const aiMesh* mesh, int matId, const std::vect
 }   // end setObjectTextureCoordinates
 
 
-// Returns -1 if no textures loaded.
-int addMaterial( const boost::filesystem::path& ppath, const aiScene *scene, int meshIdx, Mesh::Ptr model)
-{
-    const aiMesh* mesh = scene->mMeshes[meshIdx];
-    const aiMaterial* aimat = scene->mMaterials[mesh->mMaterialIndex];
-
-    MaterialTextures mat( aimat, ppath);
-    cv::Mat tx;
-    if ( mat.loadDiffuse())
-    {
-        assert( !mat.diffuse().empty());
-        tx = mat.diffuse()[0];
-    }   // end if
-    else if ( mat.loadAmbient())
-    {
-        assert( !mat.ambient().empty());
-        tx = mat.ambient()[0];
-    }   // end else if
-    else if ( mat.loadSpecular())
-    {
-        assert( !mat.specular().empty());
-        tx = mat.specular()[0];
-    }   // end else if
-
-    if ( tx.empty())
-    {
-        std::cerr << "\tProblem loading image textures!" << std::endl;
-        return -1;
-    }   // end if
-
-    return model->addMaterial( tx);
-}   // end addMaterial
-
-
 Mesh::Ptr createMesh( Assimp::Importer* importer, const boost::filesystem::path& ppath, bool loadTextures, bool failOnNonTriangles)
 {
     const aiScene* scene = importer->GetScene();
@@ -273,15 +250,20 @@ Mesh::Ptr createMesh( Assimp::Importer* importer, const boost::filesystem::path&
             // several meshes. Each mesh may or may not have texture coordinates.
             if ( mesh->HasTextureCoords(0))
             {
-                // New materials are added only if they define a texture.
-                const int matId = addMaterial( ppath, scene, i, model);
-                if ( matId >= 0)
-                    setObjectTextureCoordinates( mesh, matId, *fidxs, model);
+                MaterialTextures mat( scene->mMaterials[mesh->mMaterialIndex], ppath);
+                if ( mat.hasTexture())
+                {
+                    cv::Mat tx = mat.load();
+                    const int matId = model->addMaterial( tx);
+                    if ( matId >= 0)
+                        setObjectTextureCoordinates( mesh, matId, *fidxs, model);
+                    else
+                    {
+                        std::cerr << "[WARNING] r3dio::AssetImporter::createMesh(): "
+                            << "no valid texture found at '" << ppath.string() << "'" << std::endl;
+                    }   // end else
+                }   // end if
             }   // end if
-            /*
-            else
-                std::cerr << "Mesh defines no texture coordinates." << std::endl;
-            */
         }   // end if
         //std::cerr << "===================================================" << std::endl;
     }   // end for
