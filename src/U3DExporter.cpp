@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2020 Richard Palmer
+ * Copyright (C) 2021 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,13 +23,14 @@
 #include <cstdlib>
 #include <cstdio>
 #include <boost/filesystem/operations.hpp>
-#include <boost/process.hpp>    // Requires at least boost 1.64+
 #ifdef _WIN32
 #include <boost/process/windows.hpp>    // For hiding console window
 #endif
+#include <boost/process.hpp>    // Requires at least boost 1.64+
 using r3dio::IDTFExporter;
 using r3dio::U3DExporter;
 using r3d::Mesh;
+using r3d::Colour;
 namespace bp = boost::process;
 
 
@@ -47,8 +48,8 @@ bool U3DExporter::isAvailable()
 
 
 // public
-U3DExporter::U3DExporter( bool delOnDestroy, bool m9, float av)
-    : r3dio::MeshExporter(), _delOnDestroy(delOnDestroy), _media9(m9), _ambv(av)
+U3DExporter::U3DExporter( bool delOnDestroy, bool m9, const Colour &ems)
+    : r3dio::MeshExporter(), _delOnDestroy(delOnDestroy), _media9(m9), _ems(ems)
 {
     if ( IDTFConverter.empty())
         IDTFConverter = "IDTFConverter";
@@ -61,34 +62,30 @@ U3DExporter::U3DExporter( bool delOnDestroy, bool m9, float av)
 
 
 namespace {
+
 bool convertIDTF2U3D( const std::string& idtffile, const std::string& u3dfile)
 {
+    // -debuglevel 0    No debug dump
+    // -pq 1000         Position quality MAX
+    // -tcq 1000        Texture coordinates quality MAX
+    // -gq 1000         Geometry quality MAX
+    // -tq 100          Texture quality MAX
+    // -en 1            Enable normals exclusion 
+    // -eo 65535        Export everything
+    static const std::string PARAMS = " -debuglevel 0 -pq 1000 -tcq 1000 -gq 1000 -tq 100 -en 1 -eo 65535 ";
+    std::ostringstream cmd;
+    cmd << "\"" << U3DExporter::IDTFConverter << "\"" << PARAMS
+        << "-input \"" << idtffile << "\" -output \"" << u3dfile << "\"";
+#ifdef _WIN32
+    const std::string pexe = "cmd /Q /S /C \"" + cmd.str() + " > nul\"";
+#else
+    const std::string pexe = cmd.str() + " > /dev/null";
+#endif
+    //std::cerr << "[INFO] r3dio::U3DExporter executing: " << pexe << std::endl;
     bool success = false;
     try
     {
-        std::ostringstream cmd;
-        cmd << "\"" << U3DExporter::IDTFConverter << "\""
-            << " -debuglevel 0" // no debug dump
-            << " -pq 1000"  // Position quality MAX
-            << " -tcq 1000" // Texture coordinates quality MAX
-            << " -gq 1000"  // Geometry quality MAX
-            << " -tq 100"   // Texture quality MAX
-            << " -en 1"     // Enable normals exclusion 
-            << " -eo 65535" // Export everything
-            << " -input \"" << idtffile << "\""
-            << " -output \"" << u3dfile << "\"";
-
-        bp::ipstream out;
-        const std::string pexe = cmd.str();
-        //std::cerr << "[INFO] r3dio::U3DExporter executing: " << pexe << std::endl;
-#ifdef _WIN32
-        bp::child c( pexe, bp::std_out > out, bp::windows::hide);
-#else
-        bp::child c( pexe, bp::std_out > out);
-#endif
-        c.wait();
-        success = c.exit_code() == 0;
-        //success = std::system( pexe.c_str()) == 0;
+        success = std::system( pexe.c_str()) == 0;
     }   // end try
     catch ( const std::exception& e)
     {
@@ -103,17 +100,16 @@ bool convertIDTF2U3D( const std::string& idtffile, const std::string& u3dfile)
 
 
 // protected
-bool U3DExporter::doSave( const Mesh& model, const std::string& filename)
+bool U3DExporter::doSave( const Mesh& mesh, const std::string& filename)
 {
     static const std::string istr = "[INFO] r3dio::U3DExporter::doSave: ";
     static const std::string wstr = "[WARNING] r3dio::U3DExporter::doSave: ";
     bool savedOkay = true;
 
     // First save to intermediate IDTF format.
-    IDTFExporter idtfExporter( _delOnDestroy, _media9, _ambv);
+    IDTFExporter idtfExporter( _delOnDestroy, _media9, _ems);
     const std::string idtffile = boost::filesystem::path(filename).replace_extension("idtf").string();
-    //std::cerr << istr << "Saving model to IDTF format" << std::endl;
-    if ( !idtfExporter.save( model, idtffile))
+    if ( !idtfExporter.save( mesh, idtffile))
     {   
         setErr( idtfExporter.err());
         savedOkay = false;
@@ -125,10 +121,10 @@ bool U3DExporter::doSave( const Mesh& model, const std::string& filename)
     }   // end if
 
     if ( !savedOkay)
-        std::cerr << wstr << "Failed to convert from IDTF to U3D!" << std::endl;
+        std::cerr << wstr << err() << std::endl;
 #ifndef NDEBUG
     else
-        std::cerr << istr << "Successfully converted IDTF to U3D" << std::endl;
+        std::cerr << istr << "Converted IDTF to U3D" << std::endl;
 #endif
 
     return savedOkay;

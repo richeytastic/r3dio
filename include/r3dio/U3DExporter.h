@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2020 Richard Palmer
+ * Copyright (C) 2021 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 #define r3dio_U3D_EXPORTER_H
 
 #include "MeshExporter.h"
+#include <r3d/Colour.h>
 
 namespace r3dio {
 
@@ -48,9 +49,7 @@ public:
     // Normally, both are destroyed immediately after saving the
     // U3D model. Set delOnDestroy to false to retain these files.
     // Setting media9 true will transform coordinates as (a,b,c) --> (a,-c,b).
-    // Set ambv to a number less than one for flat textured models otherwise
-    // the surface form will not be visible!
-    U3DExporter( bool delOnDestroy=true, bool media9=false, float ambv=1.0f);
+    U3DExporter( bool delOnDestroy=true, bool media9=false, const r3d::Colour &ems=r3d::Colour::white());
 
 protected:
     virtual bool doSave( const r3d::Mesh&, const std::string& filename);
@@ -58,7 +57,7 @@ protected:
 private:
     const bool _delOnDestroy;
     const bool _media9;
-    const float _ambv;
+    const r3d::Colour _ems;
 };  // end class
 
 }   // end namespace
