@@ -149,9 +149,9 @@ void nodeLight( std::ostream& os, int lightID, const Vec3f& pos=Vec3f(0,0,0))
     os << tt << "PARENT 0 {" << n;
     os << ttt << "PARENT_NAME \"<NULL>\"" << n;
     os << ttt << "PARENT_TM {" << n;
-    os << tttt << "1.0 0.0 0.0 " << std::fixed << std::setprecision(6) << pos[0] << n;
-    os << tttt << "0.0 1.0 0.0 " << std::fixed << std::setprecision(6) << pos[1] << n;
-    os << tttt << "0.0 0.0 1.0 " << std::fixed << std::setprecision(6) << pos[2] << n;
+    os << tttt << "1.0 0.0 0.0 " << pos[0] << n;
+    os << tttt << "0.0 1.0 0.0 " << pos[1] << n;
+    os << tttt << "0.0 0.0 1.0 " << pos[2] << n;
     os << tttt << "0.0 0.0 0.0 1.0" << n;
     os << ttt << "}" << n;  // end PARENT_TM
     os << tt << "}" << n;  // end PARENT 0
@@ -177,6 +177,7 @@ void resourceLight( std::ostream& os, int lightID)
     os << "}" << n << n;
 }   // end resourceLight
 */
+
 
 void resourceListShader( std::ostream& os, bool hasTX)
 {
