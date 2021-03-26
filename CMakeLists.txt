@@ -24,7 +24,7 @@ set( INCLUDE_FILES
     "${INCLUDE_F}/IDTFExporter.h"
     "${INCLUDE_F}/IOFormats.h"
     "${INCLUDE_F}/IOHelpers.h"
-    "${INCLUDE_F}/LaTeXU3DInserter.h"
+    "${INCLUDE_F}/LatexWriter.h"
     "${INCLUDE_F}/MeshExporter.h"
     "${INCLUDE_F}/MeshImporter.h"
     "${INCLUDE_F}/OBJExporter.h"
@@ -40,7 +40,7 @@ set( SRC_FILES
     ${SRC_DIR}/IDTFExporter
     ${SRC_DIR}/IOFormats
     ${SRC_DIR}/IOHelpers
-    ${SRC_DIR}/LaTeXU3DInserter
+    ${SRC_DIR}/LatexWriter
     ${SRC_DIR}/MeshExporter
     ${SRC_DIR}/MeshImporter
     ${SRC_DIR}/OBJExporter

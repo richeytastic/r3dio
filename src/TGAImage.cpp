@@ -51,15 +51,15 @@ struct TGAHeader
         idlength = barray[0];
         colourmaptype = barray[1];
         datatypecode = barray[2];
-        memcpy( &colourmaporigin, &barray[3], 2);
-        memcpy( &colourmaplength, &barray[5], 2);
-        memcpy( &colourmapdepth, &barray[7], 1);
-        memcpy( &x_origin, &barray[8], 2);
-        memcpy( &y_origin, &barray[10], 2);
-        memcpy( &width, &barray[12], 2);
-        memcpy( &height, &barray[14], 2);
-        memcpy( &bitsperpixel, &barray[16], 1);
-        memcpy( &imagedescriptor, &barray[17], 1);
+        std::memcpy( &colourmaporigin, &barray[3], 2);
+        std::memcpy( &colourmaplength, &barray[5], 2);
+        std::memcpy( &colourmapdepth, &barray[7], 1);
+        std::memcpy( &x_origin, &barray[8], 2);
+        std::memcpy( &y_origin, &barray[10], 2);
+        std::memcpy( &width, &barray[12], 2);
+        std::memcpy( &height, &barray[14], 2);
+        std::memcpy( &bitsperpixel, &barray[16], 1);
+        std::memcpy( &imagedescriptor, &barray[17], 1);
     }   // end setFromArray
 
 
@@ -69,18 +69,18 @@ struct TGAHeader
           x_origin(0), y_origin(0), width(m.cols), height(m.rows),
           bitsperpixel( m.channels() * 8), imagedescriptor(0)
     {
-        memcpy( &barray[0], &idlength, 1);
-        memcpy( &barray[1], &colourmaptype, 1);
-        memcpy( &barray[2], &datatypecode, 1);
-        memcpy( &barray[3], &colourmaporigin, 2);
-        memcpy( &barray[5], &colourmaplength, 2);
-        memcpy( &barray[7], &colourmapdepth, 1);
-        memcpy( &barray[8], &x_origin, 2);
-        memcpy( &barray[10], &y_origin, 2);
-        memcpy( &barray[12], &width, 2);
-        memcpy( &barray[14], &height, 2);
-        memcpy( &barray[16], &bitsperpixel, 1);
-        memcpy( &barray[17], &imagedescriptor, 1);
+        std::memcpy( &barray[0], &idlength, 1);
+        std::memcpy( &barray[1], &colourmaptype, 1);
+        std::memcpy( &barray[2], &datatypecode, 1);
+        std::memcpy( &barray[3], &colourmaporigin, 2);
+        std::memcpy( &barray[5], &colourmaplength, 2);
+        std::memcpy( &barray[7], &colourmapdepth, 1);
+        std::memcpy( &barray[8], &x_origin, 2);
+        std::memcpy( &barray[10], &y_origin, 2);
+        std::memcpy( &barray[12], &width, 2);
+        std::memcpy( &barray[14], &height, 2);
+        std::memcpy( &barray[16], &bitsperpixel, 1);
+        std::memcpy( &barray[17], &imagedescriptor, 1);
     }   // end ctor
 
     TGAHeader() {}
@@ -103,7 +103,7 @@ bool r3dio::saveTGA( const cv::Mat& m, const std::string& fname)
         return false;
     }   // end if
 
-    FILE *bstream = fopen( fname.c_str(), "wb");
+    FILE *bstream = std::fopen( fname.c_str(), "wb");
     if ( !bstream)
     {
         std::cerr << "[ERROR] r3dio::saveTGA(" << fname << "): Unable to open file for writing TGA image!" << std::endl;
@@ -112,7 +112,7 @@ bool r3dio::saveTGA( const cv::Mat& m, const std::string& fname)
 
     // Write the header
     TGAHeader tga(m);
-    if ( fwrite( tga.barray, 1, 18, bstream) != 18)
+    if ( std::fwrite( tga.barray, 1, 18, bstream) != 18)
     {
         std::cerr << "[ERROR] r3dio::saveTGA: Failed to write TGA header!" << std::endl;
         return false;
@@ -122,7 +122,7 @@ bool r3dio::saveTGA( const cv::Mat& m, const std::string& fname)
     int bwrote = 0;
     const int nc = m.cols * m.channels();
     for ( int i = int(m.rows-1); i >= 0; --i)    // Write bottom to top
-        bwrote += (int)fwrite( (void*)m.ptr(i), 1, nc, bstream);
+        bwrote += (int)std::fwrite( (void*)m.ptr(i), 1, nc, bstream);
 
     // Check all bytes written okay
     if ( bwrote != int(nc * m.rows))
@@ -131,7 +131,7 @@ bool r3dio::saveTGA( const cv::Mat& m, const std::string& fname)
         return false;
     }   // end if
 
-    fclose(bstream);    // flush & close
+    std::fclose(bstream);    // flush & close
     return true;
 }   // end saveTGA
 
@@ -139,7 +139,7 @@ bool r3dio::saveTGA( const cv::Mat& m, const std::string& fname)
 cv::Mat r3dio::loadTGA( const std::string& fname)
 {
     cv::Mat m;
-    FILE *bstream = fopen( fname.c_str(), "rb");
+    FILE *bstream = std::fopen( fname.c_str(), "rb");
     if ( !bstream)
     {
         std::cerr << "[ERROR] r3dio::loadTGA(" << fname << "): Unable to open file for reading!" << std::endl;
@@ -148,7 +148,7 @@ cv::Mat r3dio::loadTGA( const std::string& fname)
 
     // Read the header
     TGAHeader tga;
-    if ( fread( tga.barray, 1, 18, bstream) != 18)
+    if ( std::fread( tga.barray, 1, 18, bstream) != 18)
     {
         std::cerr << "[ERROR] r3dio::loadTGA: Failed to read TGA header!" << std::endl;
         return m;
@@ -160,7 +160,7 @@ cv::Mat r3dio::loadTGA( const std::string& fname)
     m = cv::Mat( tga.height, tga.width, CV_8UC(tga.bitsperpixel/8));
     const int nc = m.cols * m.channels();
     for ( int i = int(m.rows-1); i >= 0; --i)   // Read bottom to top
-        bread += (int)fread( (void*)m.ptr(i), 1, nc, bstream);
+        bread += (int)std::fread( (void*)m.ptr(i), 1, nc, bstream);
 
     if ( bread != int(nc * m.rows))
     {
@@ -168,6 +168,6 @@ cv::Mat r3dio::loadTGA( const std::string& fname)
         return cv::Mat();
     }   // end if
 
-    fclose(bstream);
+    std::fclose(bstream);
     return m;
 }   // end loadTGA

@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2019 Richard Palmer
+ * Copyright (C) 2021 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,53 +14,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ************************************************************************/
-
-/**
- * Provides functionality to dump r3d::Meshs into PDF via LaTeX
- * and U3D model format conversion using r3dio::LaTeXU3DInserter.
- *
- * Given an existing output stream, function operator<< takes a LaTeXU3DInserter
- * instance and writes a LaTeX figure for parsing by the media9 package at that
- * location in the stream. The LaTeXU3DInserter object may be set with an Mesh
- * instance, which is internally converted to a U3D model - the filepath of which
- * is inserted into the LaTeX stream. On destruction of this object, all U3D
- * objects produced in this way are removed from the filesystem.
- *
- * After all figure insertions have been completed and the .tex file saved,
- * its path can be passed to a PDFGenerator instance for running pdflatex
- * which uses the media9 package to embed the U3D models found in the .tex
- * file; pdflatex must be available in the path for this to work.
- * Ensure the media9 package is included in the LaTeX by adding:
- * "\usepackage{media9}" somewhere after the documentclass declaration.
- *
- * The operator function returns the filepath to the generated pdf file
- * (which will be adjacent in the filesystem to texfile), or an empty string
- * on error. Optionally, the PDFGenerator can be set to remove all generated
- * files from the pdflatex process on destruction. In addition, the .tex
- * file passed to the generate function can be set for removal (but only
- * upon successful generation/output of pdflatex).
- *
- * Currently, support for viewing 3D PDFs is limited with Adobe Reader being
- * the only PDF viewer that I've come across that reliably shows 3D content.
- * Hopefully other readers with 3D model viewing plugins will be developed
- * (especially for Linux!)
- * 
- * -BUGS-
- * A constant camera up vector is not being respected (problem likely
- * with the media9 package) which causes the camera to be rotated to
- * have an up vector in the -X direction when passing in a camera location
- * which is not on the +Z axis (currently don't know how camera behaves
- * when set at other locations). For the moment, the camera position
- * (as provided in the CameraParams object) is ignored and the camera
- * position is set as the camera focus plus (0,0,1)*D where D is the
- * distance between the provided (but ignored) position, and the focus.
- * This might well mean that a focus at (0,0,0) is also necessary to
- * circumvent the issue (models should ideally be transformed to this
- * point anyway in most cases).
- *
- * Richard Palmer
- * August 2017
- */
 
 #ifndef R3DIO_PDF_GENERATOR_H
 #define R3DIO_PDF_GENERATOR_H

@@ -57,6 +57,21 @@ PDFGenerator::PDFGenerator( bool remGen) : _remGen(remGen)
 }   // end ctor
 
 
+namespace {
+bool runcmd( const std::string &cmd, const std::string &ppath)
+{
+    bp::ipstream out;
+#ifdef _WIN32
+    bp::child c( cmd, bp::std_out > out, bp::windows::hide, bp::start_dir=ppath);
+#else
+    bp::child c( cmd, bp::std_out > out, bp::start_dir=ppath);
+#endif
+    c.wait();
+    return c.exit_code() == 0;
+}   // end runcmd
+}   // end namespace
+
+
 // public
 bool PDFGenerator::operator()( const std::string& texfile, bool remtexfile)
 {
@@ -69,39 +84,15 @@ bool PDFGenerator::operator()( const std::string& texfile, bool remtexfile)
     bfs::path tpath = texfile;
     bool success = false;
     std::ostringstream errMsg;
-    //std::cerr << "[INFO] r3dio::PDFGenerator: Attempting to generate PDF from " << texfile << std::endl;
 
     // Get the parent path of the texfile to run pdflatex in.
     const std::string ppath = tpath.parent_path().string();
-
+    const std::string cmd = "\"" + pdflatex + "\" --shell-escape -interaction batchmode -output-directory \"" + ppath + "\" \"" + texfile + "\"";
     try
     {
-        // Annoyingly, Windows MiKTeX installs itself with .../MiKTeX 2.9/... in the filepath!!!
-        // boost::process doesn't seem to handle this too well - it starts the process but then
-        // pdflatex fails due to (apparently) parsing the program name as two separate tokens.
-        // This doesn't appear to be an issue with pdflatex itself since the problem doesn't crop
-        // up when running pdflatex on cmd line using its fully qualified path (with enclosing
-        // quotes). Tried enclosing with escaped quotes in the pathname, but that didn't work
-        // either. So doing it this way!
-        //bfs::path genpath = boost::process::search_path(pdflatex);
-        //if ( genpath.empty())
-        //    genpath = bfs::path( pdflatex);
-        //bp::child c(genpath, "-interaction", "batchmode", texfile, bp::std_out > stdout, bp::std_err > stderr);
-        //std::string cmd = pdflatex + " -interaction batchmode -quiet -output-directory " + tpath.parent_path().string() + " " + texfile;
-        std::string cmd = "\"" + pdflatex + "\" --shell-escape -interaction batchmode -output-directory \"" + ppath + "\" \"" + texfile + "\"";
-        //std::cerr << "[INFO] r3dio::PDFGenerator executing: " << cmd << std::endl;
-        bp::ipstream out;
-#ifdef _WIN32
-        bp::child c( cmd, bp::std_out > out, bp::windows::hide, bp::start_dir=ppath);
-#else
-        bp::child c( cmd, bp::std_out > out, bp::start_dir=ppath);
-#endif
-        c.wait();
-        success = c.exit_code() == 0;
-        if ( success)
-            ;//std::cerr << "Generated " << tpath.replace_extension("pdf").string() << std::endl;
-        else
-            errMsg << "[ERROR] r3dio::PDFGenerator: Child process exited with " << c.exit_code();
+        success = runcmd( cmd, ppath);
+        if ( success)   // Run twice because of the annoyances of pdflatex not being able to work out numbers of pages...
+            success = runcmd( cmd, ppath);
     }   // end try
     catch ( const std::exception& e)
     {
@@ -109,6 +100,8 @@ bool PDFGenerator::operator()( const std::string& texfile, bool remtexfile)
         success = false;
     }   // end ctch
 
+    if ( !success)
+        std::cerr << "[FAILED] r3dio::PDFGenerator: " << cmd << std::endl;
     if ( !errMsg.str().empty())
         std::cerr << errMsg.str() << std::endl;
 
@@ -129,10 +122,7 @@ bool PDFGenerator::operator()( const std::string& texfile, bool remtexfile)
 
     // Remove the input .tex file?
     if ( success && remtexfile)
-    {
         bfs::remove(texfile);
-        //std::cerr << "Removed " << texfile << std::endl;
-    }   // end if
 
     return success;
 }   // end operator()

@@ -231,11 +231,8 @@ void resourceListMaterial( std::ostream& os, const Colour &ems)
     os << t << "RESOURCE_COUNT 1" << n;
     os << t << "RESOURCE 0 {" << n;
 	os << tt << "RESOURCE_NAME \"Material0\"" << n;
-	//os << tt << "MATERIAL_AMBIENT 1.0 1.0 1.0 1.0" << n;
 	os << tt << "MATERIAL_AMBIENT 0.0 0.0 0.0 0.0" << n;
-	//os << tt << "MATERIAL_DIFFUSE 1.0 1.0 1.0 1.0" << n;
-	//os << tt << "MATERIAL_DIFFUSE 0.0 0.0 0.0 0.0" << n;    // Completely flat colour
-	os << tt << "MATERIAL_DIFFUSE 0.4 0.4 0.4 0.4" << n;
+	os << tt << "MATERIAL_DIFFUSE 0.0 0.0 0.0 0.0" << n;    // Completely flat colour
 	os << tt << "MATERIAL_SPECULAR 0.0 0.0 0.0 0.0" << n;
     os << tt << "MATERIAL_EMISSIVE " << ems[0] << " " << ems[1] << " " << ems[2] << " 1.0" << n;
 	os << tt << "MATERIAL_REFLECTIVITY 0.0" << n;

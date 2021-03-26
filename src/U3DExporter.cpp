@@ -63,6 +63,19 @@ U3DExporter::U3DExporter( bool delOnDestroy, bool m9, const Colour &ems)
 
 namespace {
 
+bool runcmd( const std::string &cmd)
+{
+    bp::ipstream out;
+#ifdef _WIN32
+    bp::child c( cmd, bp::std_out > out, bp::windows::hide);
+#else
+    bp::child c( cmd, bp::std_out > out);
+#endif
+    c.wait();
+    return c.exit_code() == 0;
+}   // end runcmd
+
+
 bool convertIDTF2U3D( const std::string& idtffile, const std::string& u3dfile)
 {
     // -debuglevel 0    No debug dump
@@ -76,16 +89,19 @@ bool convertIDTF2U3D( const std::string& idtffile, const std::string& u3dfile)
     std::ostringstream cmd;
     cmd << "\"" << U3DExporter::IDTFConverter << "\"" << PARAMS
         << "-input \"" << idtffile << "\" -output \"" << u3dfile << "\"";
+    /*
 #ifdef _WIN32
     const std::string pexe = "cmd /Q /S /C \"" + cmd.str() + " > nul\"";
 #else
     const std::string pexe = cmd.str() + " > /dev/null";
 #endif
     //std::cerr << "[INFO] r3dio::U3DExporter executing: " << pexe << std::endl;
+    */
     bool success = false;
     try
     {
-        success = std::system( pexe.c_str()) == 0;
+        success = runcmd( cmd.str());
+        //success = std::system( pexe.c_str()) == 0;
     }   // end try
     catch ( const std::exception& e)
     {
