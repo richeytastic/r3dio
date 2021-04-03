@@ -19,6 +19,7 @@
 #include <PDFGenerator.h>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <unordered_map>
 #include <fstream>
 #include <sstream>
 using r3d::Vec3f;
@@ -87,7 +88,6 @@ void _writeVWSView( std::ostream &f, const std::string &vtitle, const Vec3f &c2c
       << "  C2C=" << c2c[0] << " " << c2c[1] << " " << c2c[2] << "\n"
       << "  ROO=" << roo << "\n"
       << "  " << astr << "\n"
-      //<< "  LIGHTS=AmbientLight\n"
       << "  LIGHTS=None\n"
       << "END\n";
 }   // end _writeVWSView
@@ -181,10 +181,15 @@ std::string LatexWriter::sanit( const std::string &s)
 
 struct LatexWriter::Pimpl
 {
-    Pimpl( bool doDelete) : _doDelete(doDelete),
-        _workdir( BFS::temp_directory_path() / BFS::unique_path()),
-        _texfile( _workdir / "scene.tex")
-    {}
+    Pimpl( float wmm, float hmm, bool doDelete)
+        : _wmm(wmm), _hmm(hmm), _doDelete(doDelete),
+          _workdir( BFS::temp_directory_path() / BFS::unique_path())
+    {
+        if ( !BFS::create_directories( _workdir))
+            std::cerr << "[ERROR] r3dio::LatexWriter: Unable to create working directory!" << std::endl;
+        // Need to draw extent of page area first to make relative page measurement drawing work
+        drawRectangle( Box(0,0,wmm,hmm), r3d::Colour::white());
+    }   // end ctor
 
     ~Pimpl()
     {
@@ -193,28 +198,51 @@ struct LatexWriter::Pimpl
         boost::system::error_code ec;
         BFS::remove_all( _workdir, ec);
         if ( ec)
-        {
-            std::cerr << "[WARNING] r3dio::LatexWriter: Unable to remove working directory: "
-                << ec.message() << std::endl;
-        }   // end if
+            std::cerr << "[WARNING] r3dio::LatexWriter: Unable to remove working directory: " << ec.message() << std::endl;
     }   // end dtor
 
-    bool open( float wmm, float hmm)
+
+    bool copyInFile( const std::string &fpath, const std::string &fname) const
     {
-        if ( !BFS::create_directories( _workdir))
+        if ( !BFS::is_regular_file(fpath))
         {
-            std::cerr << "[ERROR] r3dio::LatexWriter: Unable to create working directory!" << std::endl;
+            std::cerr << "[ERROR] r3dio::LatexWriter::copyInFile '" << fpath << "' not a regular file!" << std::endl;
+            return false;
+        }   // end if
+        const BFS::path tofile = _workdir / fname;
+        if ( BFS::exists(tofile))
+        {
+            std::cerr << "[ERROR] r3dio::LatexWriter::copyInFile '" << tofile << "' already exists!" << std::endl;
             return false;
         }   // end if
 
+        bool success = true;
+        try
+        {
+            BFS::copy_file( fpath, tofile, BFS::copy_option::fail_if_exists);
+        }   // end try
+        catch ( ...)
+        {
+            std::cerr << "[ERROR] r3dio::LatexWriter::copyInFile " << "Failed copy to '" << tofile << "'" << std::endl;
+            success = false;
+        }   // end catch
+        return success;
+    }   // end copyInFile
+
+
+    std::string makePDF() const
+    {
+        std::string outfile;
+        BFS::path texfile( _workdir / "scene.tex");
+        std::ofstream fout;        // File stream
         bool success = false;
         try
         {
-            _fout.open( _texfile.string(), std::ios::out);
-            _fout << "\\documentclass{article}\n"
+            fout.open( texfile.string(), std::ios::out);
+            fout << "\\documentclass{article}\n"
                 << "\\listfiles\n" // So log shows packages used (useful for debugging)
-                << "\\usepackage[textwidth=" << wmm << "mm,textheight=" << hmm << "mm,"
-                    << "paperwidth=" << wmm << "mm,paperheight=" << hmm << "mm]{geometry}\n"
+                << "\\usepackage[textwidth=" << _wmm << "mm,textheight=" << _hmm << "mm,"
+                    << "paperwidth=" << _wmm << "mm,paperheight=" << _hmm << "mm]{geometry}\n"
                 << "\\usepackage[absolute]{textpos}\n" // Absolute positioning
                 << "\\usepackage{graphicx}\n"
                 << "\\usepackage{verbatim}\n"
@@ -229,145 +257,90 @@ struct LatexWriter::Pimpl
                 << "\\DeclareGraphicsExtensions{.png,.jpg,.pdf,.eps}\n"
                 << "\\setlength{\\TPHorizModule}{1mm}\n"
                 << "\\setlength{\\TPVertModule}{\\TPHorizModule}\n"
-                << "\\setlength{\\parindent}{0pt}\n";
-            success = true;
+                << "\\setlength{\\parindent}{0pt}\n"
+                << _hout.str() << "\n";
+            
+            // Write out the defined colours
+            for ( const auto &p : _dcols)
+            {
+                const r3d::Colour &col = p.first;
+                fout << "\\definecolor{" << p.second << "}{RGB}{" << col.ired() << "," << col.igreen() << "," << col.iblue() << "}\n";
+            }   // end for
+
+            // Add in the main document content
+            fout << "\\begin{document}\n"
+                << "\\pagenumbering{gobble}\n"
+                << "\\thispagestyle{fancy}\n"
+                << _dout.str() << "\n"
+                << "\\begin{textblock*}{0mm}(0mm,0mm)\n"
+                << "\\begin{tikzpicture}[x=1mm,y=1mm]\n"  // Scale always mm
+                << _tout.str()   // Output all drawing commands here (includes outer edge box from ctor)
+                << "\\end{tikzpicture}\n"
+                << "\\end{textblock*}\n"
+                << "\\end{document}\n";
+
+            fout.close();
+
+            success = r3dio::PDFGenerator( false)( texfile.string());
+            if ( success)
+                outfile = texfile.replace_extension("pdf").string();
+            else
+                std::cerr << "[ERROR] r3dio::LatexWriter: Failed to generate PDF from '" << texfile << "'" << std::endl;
         }   // end try
         catch (...)
         {
             std::cerr << "[ERROR] r3dio::LatexWriter: Unable to open/write file stream!" << std::endl;
             success = false;
         }   // end catch
-        return success;
-    }   // end ctor
 
-    void defineColour( const Colour &col, const std::string &nm)
-    {
-        _fout << "\\definecolor{" << sanit(nm) << "}{RGB}{"
-            << col.ired() << "," << col.igreen() << "," << col.iblue() << "}\n";
-    }   // end defineColour
-
-    bool copyInFile( const std::string &fpath, const std::string &fname)
-    {
-        if ( !BFS::is_regular_file(fpath))
-        {
-            std::cerr << "[ERROR] r3dio::LatexWriter::copyInFile '"
-                        << fpath << "' not a regular file!" << std::endl;
-            return false;
-        }   // end if
-        const BFS::path tofile = _workdir / fname;
-        if ( BFS::exists(tofile))
-        {
-            std::cerr << "[ERROR] r3dio::LatexWriter::copyInFile '"
-                        << tofile << "' already exists!" << std::endl;
-            return false;
-        }   // end if
-
-        bool success = true;
-        try
-        {
-            BFS::copy_file( fpath, tofile, BFS::copy_option::fail_if_exists);
-        }   // end try
-        catch ( ...)
-        {
-            std::cerr << "[ERROR] r3dio::LatexWriter::copyInFile "
-                        << "Failed copy to '" << tofile << "'" << std::endl;
-            success = false;
-        }   // end catch
-        return success;
-    }   // end copyInFile
+        _doDelete &= success;
+        return success ? outfile : "";
+    }   // end makePDF
 
 
     std::string workingDirectory() const { return _workdir.string();}
 
-
-    void addRaw( const std::string &tex) { _fout << tex;}
-
-
-    void beginDocument()
-    {
-        _fout << "\\begin{document}\n"
-            << "\\pagenumbering{gobble}\n"
-            << "\\thispagestyle{fancy}\n";
-    }   // end beginDocument
-
-    void endDocument() { _fout << "\\end{document}\n";}
-
-    void close()
-    {
-        if ( _fout.is_open())
-            _fout.close();
-    }   // end close
-
-    bool makePDF( std::string &outfile)
-    {
-        bool success = r3dio::PDFGenerator( false)( _texfile.string());
-        if ( success)
-            outfile = _texfile.replace_extension("pdf").string();
-        else
-        {
-            std::cerr << "[ERROR] r3dio::LatexWriter: Failed to generate PDF from '" << _texfile << "'" << std::endl;
-            _doDelete = false;
-        }   // end else
-        return success;
-    }   // end makePDF
-
-
-    void addText( const Box &box, const std::string &txt, bool centre)
-    {
-        _startBlock( box);
-        if ( centre)
-            _fout << "\\centering\n";
-        _fout << sanit(txt);
-        _endBlock();
-    }   // end addText
+    void addHeader( const std::string &tex) { _hout << tex;}
 
     void addRaw( const Box &box, const std::string &tex, bool centre)
     {
         _startBlock( box);
         if ( centre)
-            _fout << "\\centering\n";
-        _fout << tex;
+            _dout << "\\centering\n";
+        _dout << tex;
         _endBlock();
     }   // end addRaw
 
-    void startTIKZ( const Box &box)
+    void addText( const Box &box, const std::string &txt, bool centre)
     {
         _startBlock( box);
-        _fout << "\\begin{tikzpicture}[x=1mm,y=1mm]\n";  // Scale always mm
-    }   // end startTIKZ
-
-    void endTIKZ()
-    {
-        _fout << "\\end{tikzpicture}\n";
+        if ( centre)
+            _dout << "\\centering\n";
+        _dout << sanit(txt);
         _endBlock();
-    }   // end endTIKZ
+    }   // end addText
 
-    // Use within TIKZ block.
-    void fillRectangle( const Box &box, const std::string &definedColour)
+    void fillRectangle( const Box &box, const r3d::Colour &col)
     {
-        const std::string dcol = sanit(definedColour);
-        assert( !dcol.empty());
-        _fout << "\\filldraw[" << dcol << "," << dcol << "]";
+        const std::string &dcol = _getDefinedColourName( col);
+        _tout << "\\filldraw[" << dcol << "," << dcol << "]";
         _writeRectangleDims( box);
     }   // end fillRectangle
 
-    // Use within TIKZ block.
-    void drawRectangle( const Box &box, const std::string &definedColour)
+    void drawRectangle( const Box &box, const r3d::Colour &col)
     {
-        _fout << "\\draw";
-        if (!definedColour.empty())
-            _fout << "[" << sanit(definedColour) << "]";
+        _tout << "\\draw[" << _getDefinedColourName(col) << "]";
         _writeRectangleDims( box);
     }   // end drawRectangle
 
     void addImage( const Box &box, const std::string &imgpath, const std::string &caption)
     {
         _startBlock(box);
-        _fout << "\\begin{figure}\n";
-        _fout << "\\includegraphics[width=" << box[2] << "mm,height=" << box[3] << "mm]{" << BFS::path(imgpath) << "}";
+        _dout << "\\begin{figure}\n";
+        _dout << "\\includegraphics[width=" << box[2] << "mm,height=" << box[3] << "mm]{" << BFS::path(imgpath) << "}";
         if ( !caption.empty())
-            _fout << "\\caption*{" << sanit(caption) << "}\n";
-        _fout << "\\end{figure}\n";
+            _dout << "\\caption*{" << sanit(caption) << "}\n";
+        _dout << "\\end{figure}\n";
         _endBlock();
     }   // end addImage
 
@@ -381,8 +354,8 @@ struct LatexWriter::Pimpl
         _writeHideAxesFile( (_workdir / axsfile).string());
 
         _startBlock(box);
-        _fout << "\\begin{figure}\n";
-        _fout << "\\includemedia[\n"
+        _dout << "\\begin{figure}\n";
+        _dout << "\\includemedia[\n"
             //<< "\tlabel=mesh,\n"
             << "\twidth=" << w << "mm,\n"
             << "\theight=" << h << "mm,\n"
@@ -396,73 +369,75 @@ struct LatexWriter::Pimpl
             << "\t3Dviews=" << vwsfile.string() << ",\n"
             << "]{";
         if (!bgimg.empty()) // Background image?
-            _fout << "\\includegraphics[width=" << w << "mm,height=" << h << "mm]{" << bgimg << "}";
-        _fout << "}{" << u3d << "}\n";
+            _dout << "\\includegraphics[width=" << w << "mm,height=" << h << "mm]{" << bgimg << "}";
+        _dout << "}{" << u3d << "}\n";
         if ( !caption.empty())
-            _fout << "\\caption*{" << sanit(caption) << "}\n";
-        _fout << "\\end{figure}\n";
+            _dout << "\\caption*{" << sanit(caption) << "}\n";
+        _dout << "\\end{figure}\n";
         _endBlock();
     }   // end addMesh
 
 private:
     void _writeRectangleDims( const Box &box)
     {
-        _fout << "(" << box[0] << "," << box[1] << ")"  // Top left corner
-             << "rectangle(" << (box[0] + box[2]) << "," << (box[1] + box[3]) << ");\n";    // Bottom right corner
+        _tout << "(" << box[0] << "," << (_hmm - box[1]) << ")"  // One corner
+             << "rectangle(" << (box[0] + box[2]) << "," << (_hmm - box[1] - box[3]) << ");\n";    // Opposite corner
     }   // end _writeRectangleDims
 
     void _startBlock( const Box &box)
     {
-        _fout << "\\begin{textblock*}{" << box[2] << "mm}(" << box[0] << "mm," << box[1] << "mm)\n";
+        _dout << "\\begin{textblock*}{" << box[2] << "mm}(" << box[0] << "mm," << box[1] << "mm)\n";
     }   // end _startBlock
 
-    void _endBlock() { _fout << "\\end{textblock*}\n";}
+    void _endBlock() { _dout << "\\end{textblock*}\n";}
 
-    bool _doDelete;
+    const std::string &_getDefinedColourName( const r3d::Colour &col)
+    {
+        if ( _dcols.count(col) == 0)
+        {
+            std::ostringstream oss;
+            oss << "rgb-" << col.ired() << "-" << col.igreen() << "-" << col.iblue();
+            _dcols[col] = oss.str();
+        }   // end if
+        return _dcols.at(col);
+    }   // end _getDefinedColourName
+
+    float _wmm, _hmm;
+    mutable bool _doDelete;
     BFS::path _workdir;
-    BFS::path _texfile;
-    std::ofstream _fout;
+    std::unordered_map<r3d::Colour, std::string, r3d::HashColour> _dcols;    // Defined colours go at end of header
+    std::ostringstream _hout;   // Header tex
+    std::ostringstream _dout;   // Document tex
+    std::ostringstream _tout;   // TIKZ content
 };  // end struct
 
 
-LatexWriter::LatexWriter( bool doDelete) : _pimpl(new Pimpl( doDelete)) {}
+/********************** INTERFACE FOLLOWS *************************/
+
+LatexWriter::LatexWriter( float w, float h, bool doDelete) : _pimpl(new Pimpl( w, h, doDelete)) {}
+
 LatexWriter::~LatexWriter() { delete _pimpl;}
 
-void LatexWriter::defineColour( const Colour &col, const std::string &nm)
-{ _pimpl->defineColour(col,nm);}
-
 bool LatexWriter::copyInFile( const std::string &fpath, const std::string &fname)
-{ return _pimpl->copyInFile(fpath, fname);}
+{
+    return _pimpl->copyInFile(fpath, fname);
+}   // end copyInFile
 
 std::string LatexWriter::workingDirectory() const { return _pimpl->workingDirectory();}
 
-bool LatexWriter::makePDF( std::string &pdffile) { return _pimpl->makePDF( pdffile);}
+std::string LatexWriter::makePDF() const { return _pimpl->makePDF();}
 
-void LatexWriter::beginDocument() { _pimpl->beginDocument();}
-void LatexWriter::endDocument() { _pimpl->endDocument();}
-
-bool LatexWriter::open( float w, float h) { return _pimpl->open(w,h);}
-void LatexWriter::close() { _pimpl->close();}
-
-void LatexWriter::addText( const Box &box, const std::string &txt, bool cntr)
-{ _pimpl->addText( box, txt, cntr);}
-
+void LatexWriter::addHeader( const std::string &tx) { _pimpl->addHeader(tx);}
+LatexWriter& LatexWriter::operator<<( const std::string &tx) { addHeader(tx); return *this;}
 void LatexWriter::addRaw( const Box &box, const std::string &tx, bool cntr) { _pimpl->addRaw( box, tx, cntr);}
-
-void LatexWriter::addRaw( const std::string &tx) { _pimpl->addRaw(tx);}
-LatexWriter& LatexWriter::operator<<( const std::string &tx) { addRaw(tx); return *this;}
-
-void LatexWriter::startTIKZ( const Box &box) { _pimpl->startTIKZ(box);}
-void LatexWriter::endTIKZ(){ _pimpl->endTIKZ();}
-
-void LatexWriter::fillRectangle( const Box &box, const std::string &definedColour)
-{ _pimpl->fillRectangle( box, definedColour);}
-
-void LatexWriter::drawRectangle( const Box &box, const std::string &definedColour)
-{ _pimpl->drawRectangle( box, definedColour);}
+void LatexWriter::addText( const Box &box, const std::string &txt, bool cntr) { _pimpl->addText( box, txt, cntr);}
+void LatexWriter::fillRectangle( const Box &box, const r3d::Colour &col) { _pimpl->fillRectangle( box, col);}
+void LatexWriter::drawRectangle( const Box &box, const r3d::Colour &col) { _pimpl->drawRectangle( box, col);}
 
 void LatexWriter::addImage( const Box &box, const std::string &imgpath, const std::string &caption)
-{ _pimpl->addImage( box, imgpath, caption);}
+{
+    _pimpl->addImage( box, imgpath, caption);
+}   // end addImage
 
 void LatexWriter::addMesh( const Box &box, const std::string &u3d, const Cam &cam, const std::string &bgimg, const std::string &caption)
 {

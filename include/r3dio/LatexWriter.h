@@ -39,58 +39,37 @@ public:
     // can be safely embedded within a Latex .tex file.
     static std::string sanit( const std::string&);
 
+    // Open page for writing with given with and height in millimetres.
     // Set removeWorkingDir to false to retain the working directory and
-    // its file contents after this object has been destroyed.
-    explicit LatexWriter( bool removeWorkingDir=true);
+    // its file contents after this object is destroyed.
+    LatexWriter( float wmm, float hmm, bool removeWorkingDir=true);
+
     ~LatexWriter();
 
-    // Open page for writing with given with and height in millimetres.
-    // Returns true iff the stream was opened and was written to.
-    bool open( float wmm, float hmm);
-
-    // Finish adding to the document.
-    void close();
-
-    // Add any other raw tex (e.g. a header) before calling beginDocument.
-    // Can also add other packages here.
-    void addRaw( const std::string&);
-    // Same as addRaw.
-    LatexWriter &operator<<( const std::string&);
-
-    // Convenience function to define a colour.
-    // Ensure all colours are defined before calling beginDocument.
-    void defineColour( const r3d::Colour&, const std::string&);
-
-    // Copy in the given filepath to the working directory with name fname.
-    bool copyInFile( const std::string &filepath, const std::string &fname);
+    // Generate PDF from whatever content has been set so far and set
+    // return the location of the generated PDF or an empty string on failure.
+    std::string makePDF() const;
 
     // Returns the working directory for this writer.
     std::string workingDirectory() const;
 
-    void beginDocument();
-    void endDocument();
+    // Add raw tex to the header (useful for adding other packages).
+    void addHeader( const std::string&);
+    // Synonymous for addHeader.
+    LatexWriter &operator<<( const std::string&);
 
-    // After calling close(), generate PDF and set pdffile with
-    // the location of the generated PDF returning true on success.
-    bool makePDF( std::string &pdffile);
-
-    // Add text (sanitised for Latex commands) at the given position.
-    // For use in the main document body.
-    void addText( const Box&, const std::string&, bool centre=false);
-
-    // Add latex commands at the given position.
-    // For use in the main document body.
+    // Add latex commands at the given position in the main document body.
     void addRaw( const Box&, const std::string&, bool centre=false);
 
-    // Start and end a TIKZ drawing environment.
-    // For use in the main document body.
-    void startTIKZ( const Box&);
-    void endTIKZ();
+    // Add text (sanitised for Latex commands) at the given position in the main document body.
+    void addText( const Box&, const std::string&, bool centre=false);
 
-    // Convenience functions for drawing outline and filled rectangles.
-    // Use within the TIKZ drawing environment.
-    void fillRectangle( const Box&, const std::string &definedColourName);
-    void drawRectangle( const Box&, const std::string &definedColourName);
+    // Copy in the given filepath to the working directory with name fname.
+    bool copyInFile( const std::string &filepath, const std::string &fname);
+
+    // Draw outline and filled rectangles in the main document body.
+    void fillRectangle( const Box&, const r3d::Colour&);
+    void drawRectangle( const Box&, const r3d::Colour&);
 
     // Add an image at the given position with optional caption.
     void addImage( const Box&, const std::string &imgPath, const std::string &caption="");
