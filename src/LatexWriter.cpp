@@ -27,6 +27,7 @@ using r3dio::LatexWriter;
 using Colour = r3d::Colour;
 using Cam = r3d::CameraParams;
 using r3dio::Box;
+using r3dio::Point;
 namespace BFS = boost::filesystem;
 
 bool LatexWriter::testGeneratePDF()
@@ -268,7 +269,8 @@ struct LatexWriter::Pimpl
             }   // end for
 
             // Add in the main document content
-            fout << "\\begin{document}\n"
+            fout << "\n"
+                << "\\begin{document}\n"
                 << "\\pagenumbering{gobble}\n"
                 << "\\thispagestyle{fancy}\n"
                 << _dout.str() << "\n"
@@ -331,6 +333,12 @@ struct LatexWriter::Pimpl
     {
         _tout << "\\draw[" << _getDefinedColourName(col) << "]";
         _writeRectangleDims( box);
+    }   // end drawRectangle
+
+    void drawLine( const Point &p, const Point &q, const r3d::Colour &col)
+    {
+        _tout << "\\draw[" << _getDefinedColourName(col) << "]";
+        _tout << "(" << p[0] << "," << (_hmm - p[1]) << ") -- (" << q[0] << "," << (_hmm - q[1]) << ");\n";
     }   // end drawRectangle
 
     void addImage( const Box &box, const std::string &imgpath, const std::string &caption)
@@ -433,6 +441,7 @@ void LatexWriter::addRaw( const Box &box, const std::string &tx, bool cntr) { _p
 void LatexWriter::addText( const Box &box, const std::string &txt, bool cntr) { _pimpl->addText( box, txt, cntr);}
 void LatexWriter::fillRectangle( const Box &box, const r3d::Colour &col) { _pimpl->fillRectangle( box, col);}
 void LatexWriter::drawRectangle( const Box &box, const r3d::Colour &col) { _pimpl->drawRectangle( box, col);}
+void LatexWriter::drawLine( const Point &p, const Point &q, const r3d::Colour &col) { _pimpl->drawLine( p, q, col);}
 
 void LatexWriter::addImage( const Box &box, const std::string &imgpath, const std::string &caption)
 {

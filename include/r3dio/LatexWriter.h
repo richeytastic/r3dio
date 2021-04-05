@@ -27,6 +27,7 @@
 namespace r3dio {
 
 using Box = r3d::Vec4f;
+using Point = r3d::Vec2f;
 
 class r3dio_EXPORT LatexWriter
 {
@@ -70,6 +71,9 @@ public:
     // Draw outline and filled rectangles in the main document body.
     void fillRectangle( const Box&, const r3d::Colour&);
     void drawRectangle( const Box&, const r3d::Colour&);
+
+    // Draw a line between p and q in the given colour.
+    void drawLine( const Point &p, const Point &q, const r3d::Colour&);
 
     // Add an image at the given position with optional caption.
     void addImage( const Box&, const std::string &imgPath, const std::string &caption="");
