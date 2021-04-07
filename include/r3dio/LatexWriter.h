@@ -19,8 +19,8 @@
 #define R3DIO_LATEX_WRITER_H
 
 #include "r3dio_Export.h"
+#include <rimg/Colour.h>
 #include <r3d/CameraParams.h>
-#include <r3d/Colour.h>
 #include <r3d/Mesh.h>
 #include <string>
 
@@ -69,11 +69,11 @@ public:
     bool copyInFile( const std::string &filepath, const std::string &fname);
 
     // Draw outline and filled rectangles in the main document body.
-    void fillRectangle( const Box&, const r3d::Colour&);
-    void drawRectangle( const Box&, const r3d::Colour&);
+    void fillRectangle( const Box&, const rimg::Colour&);
+    void drawRectangle( const Box&, const rimg::Colour&);
 
     // Draw a line between p and q in the given colour.
-    void drawLine( const Point &p, const Point &q, const r3d::Colour&);
+    void drawLine( const Point &p, const Point &q, const rimg::Colour&);
 
     // Add an image at the given position with optional caption.
     void addImage( const Box&, const std::string &imgPath, const std::string &caption="");

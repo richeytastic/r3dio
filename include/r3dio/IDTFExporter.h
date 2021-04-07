@@ -23,7 +23,7 @@
 #define R3DIO_IDTF_EXPORTER_H
 
 #include "MeshExporter.h"
-#include <r3d/Colour.h>
+#include <rimg/Colour.h>
 
 namespace r3dio {
 
@@ -36,7 +36,7 @@ public:
     // any saved tga images (Mesh material textures) upon any new call to save,
     // or upon destruction of this object. See r3dio::U3DExporter.
     // Setting media9 true will transform coordinates as (a,b,c) --> (a,-c,b).
-    IDTFExporter( bool delFiles=false, bool media9=false, const r3d::Colour &ems=r3d::Colour::white());
+    IDTFExporter( bool delFiles=false, bool media9=false, const rimg::Colour &ems=rimg::Colour::white());
     ~IDTFExporter() override;
 
 protected:
@@ -45,7 +45,7 @@ protected:
 private:
     const bool _delOnDtor;
     const bool _media9;
-    const r3d::Colour _ems;
+    const rimg::Colour _ems;
     std::string _idtffile;
     std::vector<std::string> _tgafiles;
     void _reset();

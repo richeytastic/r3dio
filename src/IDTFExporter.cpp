@@ -26,9 +26,8 @@
 using r3dio::IDTFExporter;
 using r3d::Mesh;
 using r3d::Vec3f;
-using r3d::Colour;
 using r3d::Vec2f;
-using std::unordered_map;
+using rimg::Colour;
 
 
 // public
@@ -326,8 +325,8 @@ private:
     const bool _media9;
     std::vector<int> _fidv;          // Predictable seq. of face IDs
     std::vector<int> _vidv;          // Predictable seq. of vertex IDs
-    unordered_map<int,int> _vmap;    // Mesh vertexID --> MODEL_POSITION_LIST index
-    unordered_map<int, int> _uvmap;  // Mesh uvID --> _uvlist index
+    std::unordered_map<int,int> _vmap;    // Mesh vertexID --> MODEL_POSITION_LIST index
+    std::unordered_map<int, int> _uvmap;  // Mesh uvID --> _uvlist index
     std::vector<const Vec2f*> _uvlist;  // List of texture UVs to output in MODEL_TEXTURE_COORD_LIST
 
 

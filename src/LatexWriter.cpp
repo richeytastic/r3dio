@@ -24,7 +24,7 @@
 #include <sstream>
 using r3d::Vec3f;
 using r3dio::LatexWriter;
-using Colour = r3d::Colour;
+using Colour = rimg::Colour;
 using Cam = r3d::CameraParams;
 using r3dio::Box;
 using r3dio::Point;
@@ -189,7 +189,7 @@ struct LatexWriter::Pimpl
         if ( !BFS::create_directories( _workdir))
             std::cerr << "[ERROR] r3dio::LatexWriter: Unable to create working directory!" << std::endl;
         // Need to draw extent of page area first to make relative page measurement drawing work
-        drawRectangle( Box(0,0,wmm,hmm), r3d::Colour::white());
+        drawRectangle( Box(0,0,wmm,hmm), Colour::white());
     }   // end ctor
 
     ~Pimpl()
@@ -264,7 +264,7 @@ struct LatexWriter::Pimpl
             // Write out the defined colours
             for ( const auto &p : _dcols)
             {
-                const r3d::Colour &col = p.first;
+                const Colour &col = p.first;
                 fout << "\\definecolor{" << p.second << "}{RGB}{" << col.ired() << "," << col.igreen() << "," << col.iblue() << "}\n";
             }   // end for
 
@@ -322,20 +322,20 @@ struct LatexWriter::Pimpl
         _endBlock();
     }   // end addText
 
-    void fillRectangle( const Box &box, const r3d::Colour &col)
+    void fillRectangle( const Box &box, const Colour &col)
     {
         const std::string &dcol = _getDefinedColourName( col);
         _tout << "\\filldraw[" << dcol << "," << dcol << "]";
         _writeRectangleDims( box);
     }   // end fillRectangle
 
-    void drawRectangle( const Box &box, const r3d::Colour &col)
+    void drawRectangle( const Box &box, const Colour &col)
     {
         _tout << "\\draw[" << _getDefinedColourName(col) << "]";
         _writeRectangleDims( box);
     }   // end drawRectangle
 
-    void drawLine( const Point &p, const Point &q, const r3d::Colour &col)
+    void drawLine( const Point &p, const Point &q, const Colour &col)
     {
         _tout << "\\draw[" << _getDefinedColourName(col) << "]";
         _tout << "(" << p[0] << "," << (_hmm - p[1]) << ") -- (" << q[0] << "," << (_hmm - q[1]) << ");\n";
@@ -399,7 +399,7 @@ private:
 
     void _endBlock() { _dout << "\\end{textblock*}\n";}
 
-    const std::string &_getDefinedColourName( const r3d::Colour &col)
+    const std::string &_getDefinedColourName( const Colour &col)
     {
         if ( _dcols.count(col) == 0)
         {
@@ -413,7 +413,7 @@ private:
     float _wmm, _hmm;
     mutable bool _doDelete;
     BFS::path _workdir;
-    std::unordered_map<r3d::Colour, std::string, r3d::HashColour> _dcols;    // Defined colours go at end of header
+    std::unordered_map<Colour, std::string, rimg::HashColour> _dcols;    // Defined colours go at end of header
     std::ostringstream _hout;   // Header tex
     std::ostringstream _dout;   // Document tex
     std::ostringstream _tout;   // TIKZ content
@@ -439,9 +439,9 @@ void LatexWriter::addHeader( const std::string &tx) { _pimpl->addHeader(tx);}
 LatexWriter& LatexWriter::operator<<( const std::string &tx) { addHeader(tx); return *this;}
 void LatexWriter::addRaw( const Box &box, const std::string &tx, bool cntr) { _pimpl->addRaw( box, tx, cntr);}
 void LatexWriter::addText( const Box &box, const std::string &txt, bool cntr) { _pimpl->addText( box, txt, cntr);}
-void LatexWriter::fillRectangle( const Box &box, const r3d::Colour &col) { _pimpl->fillRectangle( box, col);}
-void LatexWriter::drawRectangle( const Box &box, const r3d::Colour &col) { _pimpl->drawRectangle( box, col);}
-void LatexWriter::drawLine( const Point &p, const Point &q, const r3d::Colour &col) { _pimpl->drawLine( p, q, col);}
+void LatexWriter::fillRectangle( const Box &box, const Colour &col) { _pimpl->fillRectangle( box, col);}
+void LatexWriter::drawRectangle( const Box &box, const Colour &col) { _pimpl->drawRectangle( box, col);}
+void LatexWriter::drawLine( const Point &p, const Point &q, const Colour &col) { _pimpl->drawLine( p, q, col);}
 
 void LatexWriter::addImage( const Box &box, const std::string &imgpath, const std::string &caption)
 {

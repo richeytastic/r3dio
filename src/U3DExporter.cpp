@@ -30,7 +30,7 @@
 using r3dio::IDTFExporter;
 using r3dio::U3DExporter;
 using r3d::Mesh;
-using r3d::Colour;
+using Colour = rimg::Colour;
 namespace bp = boost::process;
 
 

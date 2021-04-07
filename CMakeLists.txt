@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.12.2 FATAL_ERROR)
 
 project( r3dio)
 
+set(WITH_RIMG TRUE)
 set(WITH_R3D TRUE)
 set(WITH_ASSIMP TRUE)
 

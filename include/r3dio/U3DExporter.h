@@ -31,7 +31,7 @@
 #define r3dio_U3D_EXPORTER_H
 
 #include "MeshExporter.h"
-#include <r3d/Colour.h>
+#include <rimg/Colour.h>
 
 namespace r3dio {
 
@@ -49,7 +49,7 @@ public:
     // Normally, both are destroyed immediately after saving the
     // U3D model. Set delOnDestroy to false to retain these files.
     // Setting media9 true will transform coordinates as (a,b,c) --> (a,-c,b).
-    U3DExporter( bool delOnDestroy=true, bool media9=false, const r3d::Colour &ems=r3d::Colour::white());
+    U3DExporter( bool delOnDestroy=true, bool media9=false, const rimg::Colour &ems=rimg::Colour::white());
 
 protected:
     virtual bool doSave( const r3d::Mesh&, const std::string& filename);
@@ -57,7 +57,7 @@ protected:
 private:
     const bool _delOnDestroy;
     const bool _media9;
-    const r3d::Colour _ems;
+    const rimg::Colour _ems;
 };  // end class
 
 }   // end namespace
