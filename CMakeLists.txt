@@ -36,19 +36,19 @@ set( INCLUDE_FILES
     )
 
 set( SRC_FILES
-    ${SRC_DIR}/AssetExporter
-    ${SRC_DIR}/AssetImporter
-    ${SRC_DIR}/IDTFExporter
-    ${SRC_DIR}/IOFormats
-    ${SRC_DIR}/IOHelpers
-    ${SRC_DIR}/LatexWriter
-    ${SRC_DIR}/MeshExporter
-    ${SRC_DIR}/MeshImporter
-    ${SRC_DIR}/OBJExporter
-    ${SRC_DIR}/PDFGenerator
-    ${SRC_DIR}/PLYExporter
-    ${SRC_DIR}/TGAImage
-    ${SRC_DIR}/U3DExporter
+    "${SRC_DIR}/AssetExporter.cpp"
+    "${SRC_DIR}/AssetImporter.cpp"
+    "${SRC_DIR}/IDTFExporter.cpp"
+    "${SRC_DIR}/IOFormats.cpp"
+    "${SRC_DIR}/IOHelpers.cpp"
+    "${SRC_DIR}/LatexWriter.cpp"
+    "${SRC_DIR}/MeshExporter.cpp"
+    "${SRC_DIR}/MeshImporter.cpp"
+    "${SRC_DIR}/OBJExporter.cpp"
+    "${SRC_DIR}/PDFGenerator.cpp"
+    "${SRC_DIR}/PLYExporter.cpp"
+    "${SRC_DIR}/TGAImage.cpp"
+    "${SRC_DIR}/U3DExporter.cpp"
     )
 
 add_library( ${PROJECT_NAME} ${SRC_FILES} ${INCLUDE_FILES})

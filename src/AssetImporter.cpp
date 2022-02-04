@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2020 Richard Palmer
+ * Copyright (C) 2021 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,33 +31,22 @@ using r3dio::AssetImporter;
 using r3d::Mesh;
 using r3d::Vec3f;
 using r3d::Vec2f;
+namespace BFS = boost::filesystem;
 
 namespace {
 
 using uint = unsigned int;
 
-
-cv::Mat loadImage( const boost::filesystem::path& ppath, const std::string& imgfile)
+bool loadImages( const BFS::path& ppath, const std::vector<std::string> &imgfls, std::vector<cv::Mat>& imgs)
 {
-    boost::filesystem::path imgPath = ppath / imgfile;
-    cv::Mat m;
-    if ( boost::filesystem::exists( imgPath))
-        m = cv::imread( imgPath.string());
-    return m;
-}   // loadImage
-
-
-bool loadImages( const boost::filesystem::path& ppath, const std::vector<std::string>& imgfiles, std::vector<cv::Mat>& imgs)
-{
-    imgs.clear();
-    for ( const std::string& imgfile : imgfiles)
+    for ( const std::string& imgfl : imgfls)
     {
-        cv::Mat m = loadImage( ppath, imgfile);
+        const std::string imgPath = (ppath / imgfl).string();
+        //std::cerr << "imgPath: " << imgPath << std::endl;
+        const cv::Mat m = cv::imread( imgPath);
         if ( m.empty())
         {
-            const boost::filesystem::path imgPath = ppath / imgfile;
-            std::cerr << "[ERROR] r3dio::loadImage( " << imgPath.string() << "): FAILED!" << std::endl;
-            imgs.clear();
+            std::cerr << "[ERROR] r3dio::loadImage( " << imgPath << "): FAILED!" << std::endl;
             break;
         }   // end if
         else
@@ -72,7 +61,7 @@ struct MaterialTextures
 {
     // Set the texture filenames from the given material. Provide the directory
     // path to where the image files are located.
-    MaterialTextures( const aiMaterial* mat, const boost::filesystem::path& p) : _ppath(p)
+    MaterialTextures( const aiMaterial* mat, const BFS::path& p) : _ppath(p)
     {
         setTextureTypeFiles( mat, aiTextureType_AMBIENT, _ambient);
         setTextureTypeFiles( mat, aiTextureType_DIFFUSE, _diffuse);
@@ -112,7 +101,7 @@ private:
         }   // end for
     }   // end setTextureTypeFiles
 
-    boost::filesystem::path _ppath; // Parent path for location of texture image files
+    BFS::path _ppath; // Parent path for location of texture image files
 
     // The filenames for the texture maps
     std::vector<std::string> _ambient;
@@ -202,11 +191,11 @@ void setObjectTextureCoordinates( const aiMesh* mesh, int matId, const std::vect
 }   // end setObjectTextureCoordinates
 
 
-Mesh::Ptr createMesh( Assimp::Importer* importer, const boost::filesystem::path& ppath, bool loadTextures, bool failOnNonTriangles)
+Mesh::Ptr createMesh( Assimp::Importer* importer, const BFS::path& ppath, bool loadTextures, bool failOnNonTriangles)
 {
     const aiScene* scene = importer->GetScene();
-    const uint nmaterials = scene->mNumMaterials;
     const uint nmeshes = scene->mNumMeshes;
+    //const uint nmaterials = scene->mNumMaterials;
     //std::cerr << "Imported " << nmeshes << " mesh and " << nmaterials << " material parts" << std::endl;
 
     Mesh::Ptr model = nullptr;
@@ -230,18 +219,22 @@ Mesh::Ptr createMesh( Assimp::Importer* importer, const boost::filesystem::path&
                 {
                     std::cerr << "[ERROR] r3dio::AssetImporter::createMesh()"
                               << " failed on discovery of " << nonTriangles
-                              << " non-triangular faces." << std::endl;
+                              << " non-triangular facets." << std::endl;
                     model = nullptr;
                     break;
                 }   // end if
                 else
                 {
                     std::cerr << "[WARNING] r3dio::AssetImporter::createMesh(): "
-                              << nonTriangles << " non-triangular faces found!" << std::endl;
+                              << nonTriangles << " non-triangular facets found!" << std::endl;
                 }   // end if
             }   // end if
 
-            //std::cerr << dupTriangles << " / " << mesh->mNumFaces << " triangles are ignored duplicates." << std::endl;
+            if ( dupTriangles > 0)
+            {
+                std::cerr << "[INFO] r3dio::AssetImporter::createMesh(): Ignored "
+                          << dupTriangles << " / " << mesh->mNumFaces << " duplicate facets." << std::endl;
+            }   // end if
 
             if ( !loadTextures)
                 continue;
@@ -375,6 +368,7 @@ Mesh::Ptr AssetImporter::doLoad( const std::string& fname)
     Assimp::Importer* importer = new Assimp::Importer;
     importer->SetPropertyInteger( AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
 
+    //std::cerr << "r3dio::AssetImporter::doLoad( " << fname << ")" << std::endl;
     // Read the file into the common AssImp format.
     importer->ReadFile( fname, aiProcess_Triangulate
                              | aiProcess_SortByPType
@@ -396,7 +390,7 @@ Mesh::Ptr AssetImporter::doLoad( const std::string& fname)
     }   // end if
     else
     {
-        mesh = createMesh( importer, boost::filesystem::path( fname).parent_path(), _loadTextures, _failOnNonTriangles);
+        mesh = createMesh( importer, BFS::path( fname).parent_path(), _loadTextures, _failOnNonTriangles);
         if (mesh == nullptr)
         {
             std::cerr << "[WARNING] r3dio::AssetImporter::doLoad: Unable to import mesh!" << std::endl;
