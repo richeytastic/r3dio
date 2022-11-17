@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2021 Richard Palmer
+ * Copyright (C) 2022 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -368,34 +368,40 @@ Mesh::Ptr AssetImporter::doLoad( const std::string& fname)
     Assimp::Importer* importer = new Assimp::Importer;
     importer->SetPropertyInteger( AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
 
-    //std::cerr << "r3dio::AssetImporter::doLoad( " << fname << ")" << std::endl;
     // Read the file into the common AssImp format.
-    importer->ReadFile( fname, aiProcess_Triangulate
-                             | aiProcess_SortByPType
-                             | aiProcess_JoinIdenticalVertices
-                             | aiProcess_RemoveRedundantMaterials
-                             | aiProcess_OptimizeMeshes
-                             | aiProcess_FindDegenerates
-                             | aiProcess_FindInvalidData
-                             //| aiProcess_OptimizeGraph
-                             //| aiProcess_FixInfacingNormals
-                             //| aiProcess_FindInstances
+    importer->ReadFile( fname,// aiProcess_Triangulate |
+                             aiProcess_JoinIdenticalVertices |
+                             aiProcess_RemoveRedundantMaterials
+                             //aiProcess_FindDegenerates |
+                             //aiProcess_FindInvalidData |
+                             //aiProcess_OptimizeMeshes |
+                             // aiProcess_SortByPType |
+                             // aiProcess_OptimizeGraph |
+                             // aiProcess_FixInfacingNormals |
+                             // aiProcess_FindInstances
                              );
 
     Mesh::Ptr mesh = nullptr;
     if ( !importer->GetScene())
     {
-        std::cerr << "[WARNING] r3dio::AssetImporter::doLoad: Unable to read 3D scene!" << std::endl;
+        std::cerr << "[WARNING] r3dio::AssetImporter::doLoad: FAILED: " << importer->GetErrorString() << std::endl;
         setErr( "Unable to read 3D scene into importer from " + fname);
     }   // end if
     else
     {
+#ifndef NDEBUG
+        std::cerr << "Creating mesh " << fname << "...\n";
+#endif
         mesh = createMesh( importer, BFS::path( fname).parent_path(), _loadTextures, _failOnNonTriangles);
         if (mesh == nullptr)
         {
             std::cerr << "[WARNING] r3dio::AssetImporter::doLoad: Unable to import mesh!" << std::endl;
             setErr( "Unable to translate imported mesh into standard format!");
         }   // end if
+#ifndef NDEBUG
+        else
+            mesh->showDebug();
+#endif
         importer->FreeScene();
     }   // end else
 

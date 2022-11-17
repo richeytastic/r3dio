@@ -9,7 +9,7 @@ Download [libbuild](https://github.com/richeytastic/libbuild) for easy build and
 ## Prerequisites
 - [r3d](../../../r3d)
 
-- [AssImp](https://github.com/assimp) 5.1.6+
+- [AssImp](https://github.com/assimp) 5.2.5+
 
 - pdflatex
     Optionally required for PDF generation from LaTeX files - must be on the PATH.

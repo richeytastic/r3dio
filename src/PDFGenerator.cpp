@@ -1,5 +1,5 @@
 /************************************************************************
- * Copyright (C) 2020 Richard Palmer
+ * Copyright (C) 2022 Richard Palmer
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,18 +33,27 @@
 using r3dio::PDFGenerator;
 using r3dio::U3DExporter;
 using r3d::Mesh;
-namespace bp = boost::process;
-namespace bfs = boost::filesystem;
+namespace BP = boost::process;
+namespace BFS = boost::filesystem;
 
-std::string PDFGenerator::pdflatex( "pdflatex"); // public static
+std::string PDFGenerator::s_pdflatex( "");  // private static
+const std::string& PDFGenerator::programPath() { return s_pdflatex;}   // public static
+
+// public static
+bool PDFGenerator::setProgramPath( const std::string &pprog)
+{
+    s_pdflatex = BFS::path( pprog).string();    // Ensure conversion to path
+    return isAvailable();
+}   // end setProgramPath
 
 
-// public
+// public static
 bool PDFGenerator::isAvailable()
 {
-    if ( bfs::exists( pdflatex))
+    const std::string &pprog = programPath();
+    if ( BFS::exists( pprog))
         return true;
-    const bfs::path genpath = bp::search_path(pdflatex);
+    const BFS::path genpath = BP::search_path(pprog);
     return !genpath.empty();
 }   // end isAvailable
 
@@ -52,19 +61,19 @@ bool PDFGenerator::isAvailable()
 // public
 PDFGenerator::PDFGenerator( bool remGen) : _remGen(remGen)
 {
-    if ( pdflatex.empty())
-        pdflatex = "pdflatex";
+    if ( programPath().empty())
+        setProgramPath( "pdflatex");
 }   // end ctor
 
 
 namespace {
 bool runcmd( const std::string &cmd, const std::string &ppath)
 {
-    bp::ipstream out;
+    BP::ipstream out;
 #ifdef _WIN32
-    bp::child c( cmd, bp::std_out > out, bp::windows::hide, bp::start_dir=ppath);
+    BP::child c( cmd, BP::std_out > out, BP::windows::hide, BP::start_dir=ppath);
 #else
-    bp::child c( cmd, bp::std_out > out, bp::start_dir=ppath);
+    BP::child c( cmd, BP::std_out > out, BP::start_dir=ppath);
 #endif
     c.wait();
     return c.exit_code() == 0;
@@ -81,12 +90,13 @@ bool PDFGenerator::operator()( const std::string& texfile, bool remtexfile)
         return false;
     }   // end if
 
-    bfs::path tpath = texfile;
+    BFS::path tpath = texfile;
     bool success = false;
     std::ostringstream errMsg;
 
     // Get the parent path of the texfile to run pdflatex in.
     const std::string ppath = tpath.parent_path().string();
+    const std::string &pdflatex = programPath();
     const std::string cmd = "\"" + pdflatex + "\" --shell-escape -interaction batchmode -output-directory \"" + ppath + "\" \"" + texfile + "\"";
     try
     {
@@ -115,14 +125,14 @@ bool PDFGenerator::operator()( const std::string& texfile, bool remtexfile)
 
     if ( remGen)
     {
-        bfs::remove( tpath.replace_extension("aux"));
-        bfs::remove( tpath.replace_extension("log"));
-        bfs::remove( tpath.replace_extension("out"));
+        BFS::remove( tpath.replace_extension("aux"));
+        BFS::remove( tpath.replace_extension("log"));
+        BFS::remove( tpath.replace_extension("out"));
     }   // end if
 
     // Remove the input .tex file?
     if ( success && remtexfile)
-        bfs::remove(texfile);
+        BFS::remove(texfile);
 
     return success;
 }   // end operator()
