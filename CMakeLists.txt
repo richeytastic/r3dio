@@ -4,6 +4,7 @@ project( r3dio)
 
 set(WITH_RIMG TRUE)
 set(WITH_R3D TRUE)
+set(WITH_ZLIB TRUE)
 set(WITH_ASSIMP TRUE)
 
 # Don't set true here because the library shouldn't be compiled
